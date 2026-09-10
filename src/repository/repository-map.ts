@@ -1,10 +1,12 @@
 import type { RepositoryManifest } from "./types.js";
 
 export interface RepositoryMap {
+  sourceRoots: string[];
   sourceDirectories: string[];
   testDirectories: string[];
   documentationDirectories: string[];
   configurationFiles: string[];
+  entryPoints: string[];
 }
 
 export function buildRepositoryMap(
@@ -15,6 +17,19 @@ export function buildRepositoryMap(
   const documentationDirectories = new Set<string>();
   const configurationFiles = manifest.files
     .filter((file) => file.kind === "config")
+    .map((file) => file.relativePath)
+    .sort();
+  const entryPoints = manifest.files
+    .filter((file) => {
+      if (file.kind !== "source") {
+        return false;
+      }
+
+      const fileName = file.relativePath.split("/").pop() ?? "";
+      const baseName = fileName.split(".")[0];
+
+      return ["index", "main"].includes(baseName);
+    })
     .map((file) => file.relativePath)
     .sort();
 
@@ -55,9 +70,11 @@ export function buildRepositoryMap(
   }
 
   return {
+    sourceRoots: [...sourceDirectories].sort(),
     sourceDirectories: [...sourceDirectories].sort(),
     testDirectories: [...testDirectories].sort(),
     documentationDirectories: [...documentationDirectories].sort(),
     configurationFiles,
+    entryPoints,
   };
 }
