@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { detectPackageManager } from "../src/repository/package-manager-detector.js";
+import {
+  detectPackageManager,
+  detectRepositoryPackageManagers,
+} from "../src/repository/package-manager-detector.js";
 
 describe("detectPackageManager", () => {
   it("should detect npm", () => {
@@ -38,5 +41,29 @@ describe("detectPackageManager", () => {
   it("should return unknown for unsupported files", () => {
     expect(detectPackageManager("README.md")).toBe("unknown");
     expect(detectPackageManager("package-lock.json")).toBe("unknown");
+  });
+
+  it("should detect repository package manager with lockfile precedence", () => {
+    expect(
+      detectRepositoryPackageManagers(["package.json", "pnpm-lock.yaml"]),
+    ).toEqual(["pnpm"]);
+
+    expect(
+      detectRepositoryPackageManagers(["package.json", "yarn.lock"]),
+    ).toEqual(["yarn"]);
+
+    expect(detectRepositoryPackageManagers(["package.json"])).toEqual(["npm"]);
+  });
+
+  it("should return no package manager when none is detected", () => {
+    expect(
+      detectRepositoryPackageManagers(["README.md", "src/index.ts"]),
+    ).toEqual([]);
+  });
+
+  it("should prefer pnpm over npm when both package.json and pnpm lockfile exist", () => {
+    expect(
+      detectRepositoryPackageManagers(["package.json", "pnpm-lock.yaml"]),
+    ).toEqual(["pnpm"]);
   });
 });

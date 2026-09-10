@@ -3,6 +3,8 @@ import { extname, relative, resolve } from "node:path";
 
 import type { RepositoryFile, RepositoryManifest } from "./types.js";
 import { classifyFile } from "./file-classifier.js";
+import { detectLanguage } from "./language-detector.js";
+import { detectRepositoryPackageManagers } from "./package-manager-detector.js";
 
 const IGNORED_DIRECTORIES = new Set([
   ".git",
@@ -22,8 +24,25 @@ export class RepositoryScanner {
     const root = resolve(repositoryRoot);
     const files: RepositoryFile[] = [];
     const topLevelDirectories = new Set<string>();
+    const languages: Record<string, number> = {};
 
     this.walk(root, root, files, topLevelDirectories);
+
+    const rootFiles = files
+      .filter((file) => !file.relativePath.includes("/"))
+      .map((file) => file.relativePath);
+
+    const packageManagers = detectRepositoryPackageManagers(rootFiles);
+
+    for (const file of files) {
+      const language = detectLanguage(file.extension);
+
+      if (language === "unknown") {
+        continue;
+      }
+
+      languages[language] = (languages[language] ?? 0) + 1;
+    }
 
     files.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
 
@@ -33,7 +52,9 @@ export class RepositoryScanner {
       topLevelDirectories: [...topLevelDirectories].sort(),
       statistics: {
         totalFiles: files.length,
+        languages,
       },
+      packageManagers,
     };
   }
 

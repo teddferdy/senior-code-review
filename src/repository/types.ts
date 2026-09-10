@@ -13,6 +13,7 @@ export interface RepositoryFile {
 
 export interface RepositoryStatistics {
   totalFiles: number;
+  languages: Record<string, number>;
 }
 
 export interface RepositoryManifest {
@@ -20,4 +21,5 @@ export interface RepositoryManifest {
   files: RepositoryFile[];
   topLevelDirectories: string[];
   statistics: RepositoryStatistics;
+  packageManagers: string[];
 }
