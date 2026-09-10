@@ -6,14 +6,17 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "typescript": "^5",
     "tsx": "^4",
+    "typescript": "^5",
     "zod": "^4"
   },
   "devDependencies": {
-    "@types/node": "^24"
+    "@types/node": "^24",
+    "vitest": "^4.1.11"
   }
 }
