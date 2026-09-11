@@ -11,3 +11,4 @@ coverage/
 .DS_Store
 .codacy
 *.log
+.early.coverage
