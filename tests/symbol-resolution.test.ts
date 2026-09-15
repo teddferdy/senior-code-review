@@ -48,3 +48,53 @@ bar();
     );
   });
 });
+
+describe("nested scope resolution", () => {
+  it("resolves references to the outer function symbol from a nested function", () => {
+    const sourceCode = `
+function foo() {}
+
+function outer() {
+  function inner() {
+    return foo();
+  }
+
+  return inner();
+}
+`;
+
+    expect(
+      resolveSymbolReferences(sourceCode, "example.ts", "foo"),
+    ).toEqual([
+      {
+        symbolName: "foo",
+        filePath: "example.ts",
+        line: 6,
+      },
+    ]);
+  });
+});
+
+describe("nested scope shadowing", () => {
+  it("does not resolve a shadowed symbol inside a nested function", () => {
+    const sourceCode = `
+function foo() {}
+
+function outer() {
+  function inner() {
+    function foo() {
+      return 1;
+    }
+
+    return foo();
+  }
+
+  return inner();
+}
+`;
+
+    expect(
+      resolveSymbolReferences(sourceCode, "example.ts", "foo"),
+    ).toEqual([]);
+  });
+});

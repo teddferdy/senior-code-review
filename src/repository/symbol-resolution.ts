@@ -63,6 +63,8 @@ export function resolveSymbolReferences(
   let declaration: ts.Declaration | undefined;
 
   function findDeclaration(node: ts.Node): void {
+    if (targetSymbol) return;
+
     if (ts.isFunctionDeclaration(node) && node.name?.text === symbolName) {
       declaration = node;
       targetSymbol = checker.getSymbolAtLocation(node.name);
