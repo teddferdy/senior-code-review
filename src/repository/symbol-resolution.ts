@@ -6,27 +6,49 @@ export interface ResolvedSymbolReference {
   line: number;
 }
 
+const VIRTUAL_ROOT = "/__senior_code_reviewer__";
+
+function toVirtualPath(filePath: string): string {
+  const normalized = filePath.replace(/\\/g, "/");
+
+  return `${VIRTUAL_ROOT}/${normalized}`.replace(/\/+/g, "/");
+}
+
+function fromVirtualPath(filePath: string): string {
+  const normalized = filePath.replace(/\\/g, "/");
+
+  if (normalized.startsWith(`${VIRTUAL_ROOT}/`)) {
+    return normalized.slice(VIRTUAL_ROOT.length + 1);
+  }
+
+  return normalized;
+}
+
 export function resolveSymbolReferences(
-  sourceCode: string,
+  sources: Record<string, string>,
   filePath: string,
   symbolName: string,
 ): ResolvedSymbolReference[] {
+  const targetSourceCode = sources[filePath];
+
+  if (targetSourceCode === undefined) {
+    return [];
+  }
+
   const compilerOptions: ts.CompilerOptions = {
     target: ts.ScriptTarget.Latest,
     module: ts.ModuleKind.CommonJS,
+    moduleResolution: ts.ModuleResolutionKind.NodeJs,
     strict: true,
   };
 
-  const sourceFile = ts.createSourceFile(
-    filePath,
-    sourceCode,
-    ts.ScriptTarget.Latest,
-    true,
-  );
+  const virtualSources = new Map<string, string>();
+
+  for (const [sourcePath, sourceCode] of Object.entries(sources)) {
+    virtualSources.set(toVirtualPath(sourcePath), sourceCode);
+  }
 
   const host = ts.createCompilerHost(compilerOptions);
-
-  const originalGetSourceFile = host.getSourceFile;
 
   host.getSourceFile = (
     requestedFileName,
@@ -34,30 +56,86 @@ export function resolveSymbolReferences(
     onError,
     shouldCreateNewSourceFile,
   ) => {
-    if (requestedFileName === filePath) {
-      return sourceFile;
+    const normalizedFileName = requestedFileName.replace(/\\/g, "/");
+
+    const sourceCode = virtualSources.get(normalizedFileName);
+
+    if (sourceCode !== undefined) {
+      return ts.createSourceFile(
+        requestedFileName,
+        sourceCode,
+        languageVersion,
+        true,
+      );
     }
 
-    return originalGetSourceFile.call(
-      host,
-      requestedFileName,
-      languageVersion,
-      onError,
-      shouldCreateNewSourceFile,
-    );
+    return ts
+      .createCompilerHost(compilerOptions)
+      .getSourceFile(
+        requestedFileName,
+        languageVersion,
+        onError,
+        shouldCreateNewSourceFile,
+      );
   };
 
-  host.fileExists = (requestedFileName) =>
-    requestedFileName === filePath || ts.sys.fileExists(requestedFileName);
+  host.fileExists = (requestedFileName) => {
+    const normalizedFileName = requestedFileName.replace(/\\/g, "/");
 
-  host.readFile = (requestedFileName) =>
-    requestedFileName === filePath
-      ? sourceCode
-      : ts.sys.readFile(requestedFileName);
+    if (virtualSources.has(normalizedFileName)) {
+      return true;
+    }
 
-  const program = ts.createProgram([filePath], compilerOptions, host);
+    return ts.sys.fileExists(requestedFileName);
+  };
+
+  host.directoryExists = (directoryName) => {
+    const normalized = directoryName.replace(/\\/g, "/").replace(/\/+$/, "") || "/";
+
+    const prefix = normalized === "/" ? "/" : `${normalized}/`;
+
+    for (const virtualPath of virtualSources.keys()) {
+      if (virtualPath === normalized || virtualPath.startsWith(prefix)) {
+        return true;
+      }
+    }
+
+    return ts.sys.directoryExists(directoryName);
+  };
+
+  host.readFile = (requestedFileName) => {
+    const normalizedFileName = requestedFileName.replace(/\\/g, "/");
+
+    const sourceCode = virtualSources.get(normalizedFileName);
+
+    if (sourceCode !== undefined) {
+      return sourceCode;
+    }
+
+    return ts.sys.readFile(requestedFileName);
+  };
+
+  const virtualEntryPoints = [...virtualSources.keys()];
+
+  const program = ts.createProgram(virtualEntryPoints, compilerOptions, host);
 
   const checker = program.getTypeChecker();
+
+  function resolveSymbol(symbol: ts.Symbol): ts.Symbol {
+    if (symbol.flags & ts.SymbolFlags.Alias) {
+      return checker.getAliasedSymbol(symbol);
+    }
+
+    return symbol;
+  }
+
+  const targetVirtualPath = toVirtualPath(filePath);
+
+  const targetSourceFile = program.getSourceFile(targetVirtualPath);
+
+  if (!targetSourceFile) {
+    return [];
+  }
 
   let targetSymbol: ts.Symbol | undefined;
   let declaration: ts.Declaration | undefined;
@@ -66,43 +144,78 @@ export function resolveSymbolReferences(
     if (targetSymbol) return;
 
     if (ts.isFunctionDeclaration(node) && node.name?.text === symbolName) {
+      const symbol = checker.getSymbolAtLocation(node.name);
+
+      if (!symbol) return;
+
+      targetSymbol = resolveSymbol(symbol);
       declaration = node;
-      targetSymbol = checker.getSymbolAtLocation(node.name);
+
       return;
     }
 
     ts.forEachChild(node, findDeclaration);
   }
 
-  findDeclaration(sourceFile);
+  findDeclaration(targetSourceFile);
 
-  if (!targetSymbol) return [];
+  if (!targetSymbol) {
+    return [];
+  }
 
   const references: ResolvedSymbolReference[] = [];
 
-  function visit(node: ts.Node): void {
-    if (ts.isIdentifier(node) && node.text === symbolName) {
-      const symbol = checker.getSymbolAtLocation(node);
+  for (const sourceFile of program.getSourceFiles()) {
+    const normalizedSourceFileName = sourceFile.fileName.replace(/\\/g, "/");
 
-      if (symbol === targetSymbol) {
-        const { line } = sourceFile.getLineAndCharacterOfPosition(
-          node.getStart(sourceFile),
-        );
+    if (!normalizedSourceFileName.startsWith(`${VIRTUAL_ROOT}/`)) {
+      continue;
+    }
 
-        if (node.parent !== declaration) {
+    const repositoryFilePath = fromVirtualPath(normalizedSourceFileName);
+
+    if (sources[repositoryFilePath] === undefined) {
+      continue;
+    }
+
+    function visit(node: ts.Node): void {
+      if (ts.isIdentifier(node) && node.text === symbolName) {
+        const symbol = checker.getSymbolAtLocation(node);
+
+        if (symbol && resolveSymbol(symbol) === targetSymbol) {
+          if (repositoryFilePath === filePath && node.parent === declaration) {
+            ts.forEachChild(node, visit);
+            return;
+          }
+
+          // Exclude import binding declarations (e.g., `import { foo }` itself is not a usage)
+          if (
+            node.parent &&
+            (ts.isImportSpecifier(node.parent) ||
+              ts.isImportClause(node.parent) ||
+              (ts as any).isNamespaceImport?.(node.parent))
+          ) {
+            ts.forEachChild(node, visit);
+            return;
+          }
+
+          const { line } = sourceFile.getLineAndCharacterOfPosition(
+            node.getStart(sourceFile),
+          );
+
           references.push({
             symbolName,
-            filePath,
+            filePath: repositoryFilePath,
             line: line + 1,
           });
         }
       }
+
+      ts.forEachChild(node, visit);
     }
 
-    ts.forEachChild(node, visit);
+    visit(sourceFile);
   }
-
-  visit(sourceFile);
 
   return references;
 }
