@@ -330,4 +330,40 @@ export function factorial(n: number) {
       ],
     });
   });
+
+  it("resolves an aliased imported function call", () => {
+    const sources = {
+      "helper.ts": `
+export function helper() {}
+`,
+      "consumer.ts": `
+import { helper as runHelper } from "./helper";
+
+export function consumer() {
+  runHelper();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "helper",
+            filePath: "helper.ts",
+            line: 2,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
 });
