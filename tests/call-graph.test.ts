@@ -438,4 +438,124 @@ export function consumer() {
       ],
     });
   });
+
+  it("resolves a function through a barrel re-export", () => {
+    const sources = {
+      "helper.ts": `
+export function helper() {}
+`,
+      "index.ts": `
+export { helper } from "./helper";
+`,
+      "consumer.ts": `
+import { helper } from "./index";
+
+export function consumer() {
+  helper();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "helper",
+            filePath: "helper.ts",
+            line: 2,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a function through multiple barrel re-exports", () => {
+    const sources = {
+      "helper.ts": `
+export function helper() {}
+`,
+      "index.ts": `
+export { helper } from "./helper";
+`,
+      "api.ts": `
+export { helper } from "./index";
+`,
+      "consumer.ts": `
+import { helper } from "./api";
+
+export function consumer() {
+  helper();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "helper",
+            filePath: "helper.ts",
+            line: 2,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a class method call", () => {
+    const sources = {
+      "service.ts": `
+export class Service {
+  run() {}
+}
+`,
+      "consumer.ts": `
+import { Service } from "./service";
+
+export function consumer() {
+  const service = new Service();
+  service.run();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 6,
+          },
+        },
+      ],
+    });
+  });
 });

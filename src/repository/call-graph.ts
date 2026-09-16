@@ -133,6 +133,45 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
   const functionSymbols = new Map<ts.Symbol, CallGraphNode>();
 
+  function getCalleeNode(calleeSymbol: ts.Symbol): CallGraphNode | undefined {
+    const resolved = resolveSymbol(calleeSymbol);
+    const direct = functionSymbols.get(resolved);
+
+    if (direct) {
+      return direct;
+    }
+
+    // Fallback for class methods: TypeChecker may return a distinct Symbol
+    // instance for a method access (e.g., service.run()) vs the declaration
+    // symbol. They share the same declaration node, so compare by declaration
+    // identity to resolve the callee.
+    const targetDecl =
+      resolved.valueDeclaration ?? resolved.declarations?.[0];
+
+    if (!targetDecl) {
+      return undefined;
+    }
+
+    for (const [storedSymbol, node] of functionSymbols.entries()) {
+      const storedDecl =
+        storedSymbol.valueDeclaration ?? storedSymbol.declarations?.[0];
+
+      if (storedDecl === targetDecl) {
+        return node;
+      }
+
+      if (resolved.declarations && storedSymbol.declarations) {
+        for (const decl of resolved.declarations) {
+          if (storedSymbol.declarations.includes(decl)) {
+            return node;
+          }
+        }
+      }
+    }
+
+    return undefined;
+  }
+
   for (const sourceFile of program.getSourceFiles()) {
     const normalizedPath = sourceFile.fileName.replace(/\\/g, "/");
 
@@ -161,6 +200,30 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
             filePath,
             line: line + 1,
           });
+        }
+      } else if (
+        ts.isMethodDeclaration(node) &&
+        node.name &&
+        ts.isIdentifier(node.name)
+      ) {
+        // Strict scope: skip constructor methods
+        if (node.name.text === "constructor") {
+          // do not index constructors
+        } else {
+          const symbol = checker.getSymbolAtLocation(node.name);
+
+          if (symbol) {
+            const resolved = resolveSymbol(symbol);
+            const { line } = sourceFile.getLineAndCharacterOfPosition(
+              node.name.getStart(sourceFile),
+            );
+
+            functionSymbols.set(resolved, {
+              symbolName: node.name.text,
+              filePath,
+              line: line + 1,
+            });
+          }
         }
       }
 
@@ -219,7 +282,7 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         const calleeSymbol = checker.getSymbolAtLocation(node.expression);
 
         if (calleeSymbol) {
-          const callee = functionSymbols.get(resolveSymbol(calleeSymbol));
+          const callee = getCalleeNode(calleeSymbol);
 
           if (callee) {
             const { line } = sourceFile.getLineAndCharacterOfPosition(
