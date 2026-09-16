@@ -10,7 +10,13 @@ const value = foo;
 foo();
 `;
 
-    expect(resolveSymbolReferences(sourceCode, "example.ts", "foo")).toEqual([
+    expect(
+      resolveSymbolReferences(
+        { "example.ts": sourceCode },
+        "example.ts",
+        "foo",
+      ),
+    ).toEqual([
       {
         symbolName: "foo",
         filePath: "example.ts",
@@ -32,9 +38,13 @@ function foo() {
 }
 `;
 
-    expect(resolveSymbolReferences(sourceCode, "example.ts", "foo")).toEqual(
-      [],
-    );
+    expect(
+      resolveSymbolReferences(
+        { "example.ts": sourceCode },
+        "example.ts",
+        "foo",
+      ),
+    ).toEqual([]);
   });
 
   it("returns an empty collection when the symbol does not exist", () => {
@@ -43,9 +53,13 @@ function bar() {}
 bar();
 `;
 
-    expect(resolveSymbolReferences(sourceCode, "example.ts", "foo")).toEqual(
-      [],
-    );
+    expect(
+      resolveSymbolReferences(
+        { "example.ts": sourceCode },
+        "example.ts",
+        "foo",
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -64,7 +78,11 @@ function outer() {
 `;
 
     expect(
-      resolveSymbolReferences(sourceCode, "example.ts", "foo"),
+      resolveSymbolReferences(
+        { "example.ts": sourceCode },
+        "example.ts",
+        "foo",
+      ),
     ).toEqual([
       {
         symbolName: "foo",
@@ -94,7 +112,57 @@ function outer() {
 `;
 
     expect(
-      resolveSymbolReferences(sourceCode, "example.ts", "foo"),
+      resolveSymbolReferences(
+        { "example.ts": sourceCode },
+        "example.ts",
+        "foo",
+      ),
     ).toEqual([]);
+  });
+});
+
+describe("cross-file symbol resolution", () => {
+  it("resolves an imported function reference to its exported symbol", () => {
+    const sources = {
+      "foo.ts": `
+export function foo() {}
+`,
+      "consumer.ts": `
+import { foo } from "./foo";
+
+foo();
+`,
+    };
+
+    expect(resolveSymbolReferences(sources, "foo.ts", "foo")).toEqual([
+      {
+        symbolName: "foo",
+        filePath: "consumer.ts",
+        line: 4,
+      },
+    ]);
+  });
+});
+
+describe("cross-file regression", () => {
+  it("regression: consumer imports foo from ./foo should resolve via virtual directoryExists", () => {
+    const sources = {
+      "foo.ts": `
+export function foo() {}
+`,
+      "consumer.ts": `
+import { foo } from "./foo";
+
+foo();
+`,
+    };
+
+    expect(resolveSymbolReferences(sources, "foo.ts", "foo")).toEqual([
+      {
+        symbolName: "foo",
+        filePath: "consumer.ts",
+        line: 4,
+      },
+    ]);
   });
 });
