@@ -204,7 +204,11 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
     }
 
     function visit(node: ts.Node): void {
-      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+      if (
+        ts.isCallExpression(node) &&
+        (ts.isIdentifier(node.expression) ||
+          ts.isPropertyAccessExpression(node.expression))
+      ) {
         const caller = findCaller(node);
 
         if (!caller) {

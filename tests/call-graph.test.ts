@@ -402,4 +402,40 @@ export function consumer() {
       ],
     });
   });
+
+  it("resolves a namespace imported function call", () => {
+    const sources = {
+      "helper.ts": `
+export function helper() {}
+`,
+      "consumer.ts": `
+import * as helpers from "./helper";
+
+export function consumer() {
+  helpers.helper();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "helper",
+            filePath: "helper.ts",
+            line: 2,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
 });
