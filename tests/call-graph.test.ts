@@ -366,4 +366,40 @@ export function consumer() {
       ],
     });
   });
+
+  it("resolves a default imported function call", () => {
+    const sources = {
+      "helper.ts": `
+export default function helper() {}
+`,
+      "consumer.ts": `
+import helper from "./helper";
+
+export function consumer() {
+  helper();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "helper",
+            filePath: "helper.ts",
+            line: 2,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
 });
