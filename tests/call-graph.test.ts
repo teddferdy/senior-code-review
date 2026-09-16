@@ -29,6 +29,10 @@ export function consumer() {
             filePath: "foo.ts",
             line: 2,
           },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
         },
       ],
     });
@@ -70,6 +74,10 @@ export function main() {
             filePath: "helpers.ts",
             line: 2,
           },
+          callSite: {
+            filePath: "services.ts",
+            line: 5,
+          },
         },
         {
           caller: {
@@ -82,6 +90,10 @@ export function main() {
             filePath: "services.ts",
             line: 4,
           },
+          callSite: {
+            filePath: "main.ts",
+            line: 6,
+          },
         },
         {
           caller: {
@@ -93,6 +105,10 @@ export function main() {
             symbolName: "helper",
             filePath: "helpers.ts",
             line: 2,
+          },
+          callSite: {
+            filePath: "main.ts",
+            line: 7,
           },
         },
       ],
@@ -127,6 +143,10 @@ export function consumer() {
             filePath: "helper.ts",
             line: 2,
           },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
         },
         {
           caller: {
@@ -138,6 +158,46 @@ export function consumer() {
             symbolName: "helper",
             filePath: "helper.ts",
             line: 2,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 6,
+          },
+        },
+      ],
+    });
+  });
+
+  it("tracks the direct call site line", () => {
+    const sources = {
+      "helper.ts": `
+export function helper() {}
+`,
+      "consumer.ts": `
+import { helper } from "./helper";
+
+export function consumer() {
+  helper();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "helper",
+            filePath: "helper.ts",
+            line: 2,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
           },
         },
       ],

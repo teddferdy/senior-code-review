@@ -9,6 +9,10 @@ export interface CallGraphNode {
 export interface CallGraphEdge {
   caller: CallGraphNode;
   callee: CallGraphNode;
+  callSite: {
+    filePath: string;
+    line: number;
+  };
 }
 
 export interface CallGraph {
@@ -214,9 +218,17 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           const callee = functionSymbols.get(resolveSymbol(calleeSymbol));
 
           if (callee) {
+            const { line } = sourceFile.getLineAndCharacterOfPosition(
+              node.expression.getStart(sourceFile),
+            );
+
             edges.push({
               caller,
               callee,
+              callSite: {
+                filePath,
+                line: line + 1,
+              },
             });
           }
         }
