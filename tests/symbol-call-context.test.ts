@@ -9,7 +9,9 @@ function foo() {}
 foo();
 `;
 
-    expect(findSymbolCallContexts(sourceCode, "example.ts", "foo")).toEqual([
+    expect(
+      findSymbolCallContexts({ "example.ts": sourceCode }, "example.ts", "foo"),
+    ).toEqual([
       {
         symbolName: "foo",
         filePath: "example.ts",
@@ -24,7 +26,9 @@ function foo() {}
 const value = foo;
 `;
 
-    expect(findSymbolCallContexts(sourceCode, "example.ts", "foo")).toEqual([]);
+    expect(
+      findSymbolCallContexts({ "example.ts": sourceCode }, "example.ts", "foo"),
+    ).toEqual([]);
   });
 
   it("detects multiple calls in source order", () => {
@@ -34,7 +38,9 @@ foo();
 foo();
 `;
 
-    expect(findSymbolCallContexts(sourceCode, "example.ts", "foo")).toEqual([
+    expect(
+      findSymbolCallContexts({ "example.ts": sourceCode }, "example.ts", "foo"),
+    ).toEqual([
       {
         symbolName: "foo",
         filePath: "example.ts",
@@ -53,6 +59,29 @@ foo();
 function foo() {}
 `;
 
-    expect(findSymbolCallContexts(sourceCode, "example.ts", "foo")).toEqual([]);
+    expect(
+      findSymbolCallContexts({ "example.ts": sourceCode }, "example.ts", "foo"),
+    ).toEqual([]);
+  });
+
+  it("detects a cross-file imported function call", () => {
+    const sources = {
+      "foo.ts": `
+export function foo() {}
+`,
+      "consumer.ts": `
+import { foo } from "./foo";
+
+foo();
+`,
+    };
+
+    expect(findSymbolCallContexts(sources, "foo.ts", "foo")).toEqual([
+      {
+        symbolName: "foo",
+        filePath: "consumer.ts",
+        line: 4,
+      },
+    ]);
   });
 });

@@ -15,12 +15,16 @@ export interface SymbolReferenceContext {
 }
 
 export function findSymbolReferenceContext(
-  sourceCode: string,
+  sources: Record<string, string>,
   filePath: string,
   symbolName: string,
 ): SymbolReferenceContext {
   return {
-    references: findSymbolReferences(sourceCode, filePath, symbolName),
-    calls: findSymbolCallContexts(sourceCode, filePath, symbolName),
+    references: findSymbolReferences(
+      sources[filePath] ?? "",
+      filePath,
+      symbolName,
+    ),
+    calls: findSymbolCallContexts(sources, filePath, symbolName),
   };
 }
