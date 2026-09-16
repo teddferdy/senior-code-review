@@ -98,4 +98,49 @@ export function main() {
       ],
     });
   });
+
+  it("preserves duplicate direct calls as separate edges", () => {
+    const sources = {
+      "helper.ts": `
+export function helper() {}
+`,
+      "consumer.ts": `
+import { helper } from "./helper";
+
+export function consumer() {
+  helper();
+  helper();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "helper",
+            filePath: "helper.ts",
+            line: 2,
+          },
+        },
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "helper",
+            filePath: "helper.ts",
+            line: 2,
+          },
+        },
+      ],
+    });
+  });
 });
