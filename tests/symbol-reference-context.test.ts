@@ -10,29 +10,33 @@ const value = foo;
 foo();
 `;
 
-    expect(findSymbolReferenceContext(sourceCode, "example.ts", "foo")).toEqual(
-      {
-        references: [
-          {
-            symbolName: "foo",
-            filePath: "example.ts",
-            line: 3,
-          },
-          {
-            symbolName: "foo",
-            filePath: "example.ts",
-            line: 4,
-          },
-        ],
-        calls: [
-          {
-            symbolName: "foo",
-            filePath: "example.ts",
-            line: 4,
-          },
-        ],
-      },
-    );
+    expect(
+      findSymbolReferenceContext(
+        { "example.ts": sourceCode },
+        "example.ts",
+        "foo",
+      ),
+    ).toEqual({
+      references: [
+        {
+          symbolName: "foo",
+          filePath: "example.ts",
+          line: 3,
+        },
+        {
+          symbolName: "foo",
+          filePath: "example.ts",
+          line: 4,
+        },
+      ],
+      calls: [
+        {
+          symbolName: "foo",
+          filePath: "example.ts",
+          line: 4,
+        },
+      ],
+    });
   });
 
   it("returns empty collections when there are no references", () => {
@@ -40,12 +44,16 @@ foo();
 function bar() {}
 `;
 
-    expect(findSymbolReferenceContext(sourceCode, "example.ts", "foo")).toEqual(
-      {
-        references: [],
-        calls: [],
-      },
-    );
+    expect(
+      findSymbolReferenceContext(
+        { "example.ts": sourceCode },
+        "example.ts",
+        "foo",
+      ),
+    ).toEqual({
+      references: [],
+      calls: [],
+    });
   });
 
   it("preserves reference and call ordering", () => {
@@ -57,43 +65,47 @@ foo;
 foo();
 `;
 
-    expect(findSymbolReferenceContext(sourceCode, "example.ts", "foo")).toEqual(
-      {
-        references: [
-          {
-            symbolName: "foo",
-            filePath: "example.ts",
-            line: 3,
-          },
-          {
-            symbolName: "foo",
-            filePath: "example.ts",
-            line: 4,
-          },
-          {
-            symbolName: "foo",
-            filePath: "example.ts",
-            line: 5,
-          },
-          {
-            symbolName: "foo",
-            filePath: "example.ts",
-            line: 6,
-          },
-        ],
-        calls: [
-          {
-            symbolName: "foo",
-            filePath: "example.ts",
-            line: 4,
-          },
-          {
-            symbolName: "foo",
-            filePath: "example.ts",
-            line: 6,
-          },
-        ],
-      },
-    );
+    expect(
+      findSymbolReferenceContext(
+        { "example.ts": sourceCode },
+        "example.ts",
+        "foo",
+      ),
+    ).toEqual({
+      references: [
+        {
+          symbolName: "foo",
+          filePath: "example.ts",
+          line: 3,
+        },
+        {
+          symbolName: "foo",
+          filePath: "example.ts",
+          line: 4,
+        },
+        {
+          symbolName: "foo",
+          filePath: "example.ts",
+          line: 5,
+        },
+        {
+          symbolName: "foo",
+          filePath: "example.ts",
+          line: 6,
+        },
+      ],
+      calls: [
+        {
+          symbolName: "foo",
+          filePath: "example.ts",
+          line: 4,
+        },
+        {
+          symbolName: "foo",
+          filePath: "example.ts",
+          line: 6,
+        },
+      ],
+    });
   });
 });
