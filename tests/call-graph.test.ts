@@ -203,4 +203,60 @@ export function consumer() {
       ],
     });
   });
+
+  it("tracks the nearest nested function as the caller", () => {
+    const sources = {
+      "helper.ts": `
+export function helper() {}
+`,
+      "consumer.ts": `
+import { helper } from "./helper";
+
+export function outer() {
+  function inner() {
+    helper();
+  }
+
+  inner();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "inner",
+            filePath: "consumer.ts",
+            line: 5,
+          },
+          callee: {
+            symbolName: "helper",
+            filePath: "helper.ts",
+            line: 2,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 6,
+          },
+        },
+        {
+          caller: {
+            symbolName: "outer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "inner",
+            filePath: "consumer.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 9,
+          },
+        },
+      ],
+    });
+  });
 });
