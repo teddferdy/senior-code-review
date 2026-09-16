@@ -298,4 +298,36 @@ export function consumer() {
       ],
     });
   });
+
+  it("tracks a recursive self-call as a self-edge", () => {
+    const sources = {
+      "factorial.ts": `
+export function factorial(n: number) {
+  if (n <= 1) return 1;
+  return n * factorial(n - 1);
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "factorial",
+            filePath: "factorial.ts",
+            line: 2,
+          },
+          callee: {
+            symbolName: "factorial",
+            filePath: "factorial.ts",
+            line: 2,
+          },
+          callSite: {
+            filePath: "factorial.ts",
+            line: 4,
+          },
+        },
+      ],
+    });
+  });
 });
