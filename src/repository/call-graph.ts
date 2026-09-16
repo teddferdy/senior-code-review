@@ -1,0 +1,232 @@
+import ts from "typescript";
+
+export interface CallGraphNode {
+  symbolName: string;
+  filePath: string;
+  line: number;
+}
+
+export interface CallGraphEdge {
+  caller: CallGraphNode;
+  callee: CallGraphNode;
+}
+
+export interface CallGraph {
+  edges: CallGraphEdge[];
+}
+
+const VIRTUAL_ROOT = "/__senior_code_reviewer__";
+
+function toVirtualPath(filePath: string): string {
+  const normalized = filePath.replace(/\\/g, "/");
+  return `${VIRTUAL_ROOT}/${normalized}`.replace(/\/+/g, "/");
+}
+
+function fromVirtualPath(filePath: string): string {
+  const normalized = filePath.replace(/\\/g, "/");
+
+  if (normalized.startsWith(`${VIRTUAL_ROOT}/`)) {
+    return normalized.slice(VIRTUAL_ROOT.length + 1);
+  }
+
+  return normalized;
+}
+
+export function buildCallGraph(sources: Record<string, string>): CallGraph {
+  const compilerOptions: ts.CompilerOptions = {
+    target: ts.ScriptTarget.Latest,
+    module: ts.ModuleKind.CommonJS,
+    moduleResolution: ts.ModuleResolutionKind.NodeJs,
+    strict: true,
+  };
+
+  const virtualSources = new Map<string, string>();
+
+  for (const [filePath, sourceCode] of Object.entries(sources)) {
+    virtualSources.set(toVirtualPath(filePath), sourceCode);
+  }
+
+  const baseHost = ts.createCompilerHost(compilerOptions);
+  const host = ts.createCompilerHost(compilerOptions);
+
+  host.getSourceFile = (
+    requestedFileName,
+    languageVersion,
+    onError,
+    shouldCreateNewSourceFile,
+  ) => {
+    const normalized = requestedFileName.replace(/\\/g, "/");
+    const sourceCode = virtualSources.get(normalized);
+
+    if (sourceCode !== undefined) {
+      return ts.createSourceFile(
+        requestedFileName,
+        sourceCode,
+        languageVersion,
+        true,
+      );
+    }
+
+    return baseHost.getSourceFile(
+      requestedFileName,
+      languageVersion,
+      onError,
+      shouldCreateNewSourceFile,
+    );
+  };
+
+  host.fileExists = (requestedFileName) => {
+    const normalized = requestedFileName.replace(/\\/g, "/");
+
+    if (virtualSources.has(normalized)) {
+      return true;
+    }
+
+    return ts.sys.fileExists(requestedFileName);
+  };
+
+  host.directoryExists = (directoryName) => {
+    const normalized =
+      directoryName.replace(/\\/g, "/").replace(/\/+$/, "") || "/";
+
+    const prefix = normalized === "/" ? "/" : `${normalized}/`;
+
+    for (const virtualPath of virtualSources.keys()) {
+      if (virtualPath === normalized || virtualPath.startsWith(prefix)) {
+        return true;
+      }
+    }
+
+    return ts.sys.directoryExists(directoryName);
+  };
+
+  host.readFile = (requestedFileName) => {
+    const normalized = requestedFileName.replace(/\\/g, "/");
+    const sourceCode = virtualSources.get(normalized);
+
+    if (sourceCode !== undefined) {
+      return sourceCode;
+    }
+
+    return ts.sys.readFile(requestedFileName);
+  };
+
+  const program = ts.createProgram(
+    [...virtualSources.keys()],
+    compilerOptions,
+    host,
+  );
+
+  const checker = program.getTypeChecker();
+
+  function resolveSymbol(symbol: ts.Symbol): ts.Symbol {
+    if (symbol.flags & ts.SymbolFlags.Alias) {
+      return checker.getAliasedSymbol(symbol);
+    }
+
+    return symbol;
+  }
+
+  const functionSymbols = new Map<ts.Symbol, CallGraphNode>();
+
+  for (const sourceFile of program.getSourceFiles()) {
+    const normalizedPath = sourceFile.fileName.replace(/\\/g, "/");
+
+    if (!normalizedPath.startsWith(`${VIRTUAL_ROOT}/`)) {
+      continue;
+    }
+
+    const filePath = fromVirtualPath(normalizedPath);
+
+    if (sources[filePath] === undefined) {
+      continue;
+    }
+
+    function visit(node: ts.Node): void {
+      if (ts.isFunctionDeclaration(node) && node.name) {
+        const symbol = checker.getSymbolAtLocation(node.name);
+
+        if (symbol) {
+          const resolved = resolveSymbol(symbol);
+          const { line } = sourceFile.getLineAndCharacterOfPosition(
+            node.name.getStart(sourceFile),
+          );
+
+          functionSymbols.set(resolved, {
+            symbolName: node.name.text,
+            filePath,
+            line: line + 1,
+          });
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    }
+
+    visit(sourceFile);
+  }
+
+  const edges: CallGraphEdge[] = [];
+
+  for (const sourceFile of program.getSourceFiles()) {
+    const normalizedPath = sourceFile.fileName.replace(/\\/g, "/");
+
+    if (!normalizedPath.startsWith(`${VIRTUAL_ROOT}/`)) {
+      continue;
+    }
+
+    const filePath = fromVirtualPath(normalizedPath);
+
+    if (sources[filePath] === undefined) {
+      continue;
+    }
+
+    function findCaller(node: ts.Node): CallGraphNode | undefined {
+      let current: ts.Node | undefined = node.parent;
+
+      while (current) {
+        if (ts.isFunctionDeclaration(current) && current.name) {
+          const symbol = checker.getSymbolAtLocation(current.name);
+
+          if (symbol) {
+            return functionSymbols.get(resolveSymbol(symbol));
+          }
+        }
+
+        current = current.parent;
+      }
+
+      return undefined;
+    }
+
+    function visit(node: ts.Node): void {
+      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+        const caller = findCaller(node);
+
+        if (!caller) {
+          ts.forEachChild(node, visit);
+          return;
+        }
+
+        const calleeSymbol = checker.getSymbolAtLocation(node.expression);
+
+        if (calleeSymbol) {
+          const callee = functionSymbols.get(resolveSymbol(calleeSymbol));
+
+          if (callee) {
+            edges.push({
+              caller,
+              callee,
+            });
+          }
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    }
+
+    visit(sourceFile);
+  }
+
+  return { edges };
+}
