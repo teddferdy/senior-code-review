@@ -145,8 +145,7 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
     // instance for a method access (e.g., service.run()) vs the declaration
     // symbol. They share the same declaration node, so compare by declaration
     // identity to resolve the callee.
-    const targetDecl =
-      resolved.valueDeclaration ?? resolved.declarations?.[0];
+    const targetDecl = resolved.valueDeclaration ?? resolved.declarations?.[0];
 
     if (!targetDecl) {
       return undefined;
@@ -230,7 +229,8 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         node.name &&
         ts.isIdentifier(node.name) &&
         node.initializer &&
-        ts.isArrowFunction(node.initializer)
+        (ts.isArrowFunction(node.initializer) ||
+          ts.isFunctionExpression(node.initializer))
       ) {
         const symbol = checker.getSymbolAtLocation(node.name);
 
