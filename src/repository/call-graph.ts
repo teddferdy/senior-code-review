@@ -209,7 +209,25 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         if (node.name.text === "constructor") {
           // do not index constructors
         } else {
-          const symbol = checker.getSymbolAtLocation(node.name);
+          let symbol: ts.Symbol | undefined;
+
+          if (node.name.kind === ts.SyntaxKind.ComputedPropertyName) {
+            const expression = node.name.expression;
+
+            if (
+              ts.isStringLiteral(expression) ||
+              ts.isNumericLiteral(expression)
+            ) {
+              const objectLiteral = node.parent;
+
+              if (ts.isObjectLiteralExpression(objectLiteral)) {
+                const objectType = checker.getTypeAtLocation(objectLiteral);
+                symbol = checker.getPropertyOfType(objectType, expression.text);
+              }
+            }
+          } else {
+            symbol = checker.getSymbolAtLocation(node.name);
+          }
 
           if (symbol) {
             const resolved = resolveSymbol(symbol);
@@ -218,7 +236,34 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
             );
 
             functionSymbols.set(resolved, {
-              symbolName: node.name.text,
+              symbolName:
+                node.name.kind === ts.SyntaxKind.ComputedPropertyName
+                  ? (() => {
+                      const expression = node.name.expression;
+
+                      if (
+                        ts.isStringLiteral(expression) ||
+                        ts.isNumericLiteral(expression) ||
+                        ts.isNoSubstitutionTemplateLiteral(expression)
+                      ) {
+                        return expression.text;
+                      }
+
+                      if (ts.isIdentifier(expression)) {
+                        const expressionType =
+                          checker.getTypeAtLocation(expression);
+
+                        if (
+                          expressionType.isStringLiteral() ||
+                          expressionType.isNumberLiteral()
+                        ) {
+                          return expressionType.value.toString();
+                        }
+                      }
+
+                      return expression.getText(sourceFile);
+                    })()
+                  : node.name.text,
               filePath,
               line: line + 1,
             });
@@ -242,6 +287,107 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
           functionSymbols.set(resolved, {
             symbolName: node.name.text,
+            filePath,
+            line: line + 1,
+          });
+        }
+      } else if (
+        ts.isPropertyAssignment(node) &&
+        (ts.isIdentifier(node.name) ||
+          ts.isStringLiteral(node.name) ||
+          ts.isNumericLiteral(node.name) ||
+          ts.isComputedPropertyName(node.name)) &&
+        (ts.isArrowFunction(node.initializer) ||
+          ts.isFunctionExpression(node.initializer))
+      ) {
+        let symbol: ts.Symbol | undefined;
+
+        if (node.name.kind === ts.SyntaxKind.ComputedPropertyName) {
+          const expression = node.name.expression;
+
+          if (
+            ts.isStringLiteral(expression) ||
+            ts.isNumericLiteral(expression) ||
+            ts.isNoSubstitutionTemplateLiteral(expression) ||
+            ts.isTemplateExpression(expression) ||
+            ts.isIdentifier(expression)
+          ) {
+            const objectLiteral = node.parent;
+
+            if (ts.isObjectLiteralExpression(objectLiteral)) {
+              const objectType = checker.getTypeAtLocation(objectLiteral);
+
+              if (
+                ts.isIdentifier(expression) ||
+                ts.isTemplateExpression(expression)
+              ) {
+                const expressionType = checker.getTypeAtLocation(expression);
+
+                if (
+                  expressionType.isStringLiteral() ||
+                  expressionType.isNumberLiteral()
+                ) {
+                  symbol = checker.getPropertyOfType(
+                    objectType,
+                    expressionType.value.toString(),
+                  );
+                }
+              } else {
+                symbol = checker.getPropertyOfType(objectType, expression.text);
+              }
+            }
+          }
+        } else {
+          symbol = checker.getSymbolAtLocation(node.name);
+        }
+
+        if (symbol) {
+          const resolved = resolveSymbol(symbol);
+          const { line } = sourceFile.getLineAndCharacterOfPosition(
+            node.name.getStart(sourceFile),
+          );
+
+          functionSymbols.set(resolved, {
+            symbolName:
+              node.name.kind === ts.SyntaxKind.ComputedPropertyName
+                ? (() => {
+                    const expression = node.name.expression;
+
+                    if (
+                      ts.isStringLiteral(expression) ||
+                      ts.isNumericLiteral(expression) ||
+                      ts.isNoSubstitutionTemplateLiteral(expression)
+                    ) {
+                      return expression.text;
+                    }
+
+                    if (ts.isTemplateExpression(expression)) {
+                      const expressionType =
+                        checker.getTypeAtLocation(expression);
+
+                      if (
+                        expressionType.isStringLiteral() ||
+                        expressionType.isNumberLiteral()
+                      ) {
+                        return expressionType.value.toString();
+                      }
+                    }
+
+                    if (ts.isIdentifier(expression)) {
+                      const expressionType =
+                        checker.getTypeAtLocation(expression);
+
+                      if (
+                        expressionType.isStringLiteral() ||
+                        expressionType.isNumberLiteral()
+                      ) {
+                        return expressionType.value.toString();
+                      }
+                    }
+
+                    return expression.getText(sourceFile);
+                  })()
+                : node.name.text,
             filePath,
             line: line + 1,
           });
@@ -291,7 +437,8 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
       if (
         ts.isCallExpression(node) &&
         (ts.isIdentifier(node.expression) ||
-          ts.isPropertyAccessExpression(node.expression))
+          ts.isPropertyAccessExpression(node.expression) ||
+          ts.isElementAccessExpression(node.expression))
       ) {
         const caller = findCaller(node);
 
@@ -300,7 +447,52 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           return;
         }
 
-        const calleeSymbol = checker.getSymbolAtLocation(node.expression);
+        let calleeSymbol: ts.Symbol | undefined;
+
+        if (ts.isElementAccessExpression(node.expression)) {
+          const objectType = checker.getTypeAtLocation(
+            node.expression.expression,
+          );
+          const argument = node.expression.argumentExpression;
+
+          if (
+            argument &&
+            (ts.isStringLiteral(argument) ||
+              ts.isNumericLiteral(argument) ||
+              ts.isNoSubstitutionTemplateLiteral(argument) ||
+              ts.isTemplateExpression(argument) ||
+              ts.isIdentifier(argument) ||
+              ts.isPropertyAccessExpression(argument))
+          ) {
+            let propertyName: string | undefined;
+
+            if (
+              ts.isStringLiteral(argument) ||
+              ts.isNumericLiteral(argument) ||
+              ts.isNoSubstitutionTemplateLiteral(argument)
+            ) {
+              propertyName = argument.text;
+            } else {
+              const argumentType = checker.getTypeAtLocation(argument);
+
+              if (
+                argumentType.isStringLiteral() ||
+                argumentType.isNumberLiteral()
+              ) {
+                propertyName = argumentType.value.toString();
+              }
+            }
+
+            if (propertyName !== undefined) {
+              calleeSymbol = checker.getPropertyOfType(
+                objectType,
+                propertyName,
+              );
+            }
+          }
+        } else {
+          calleeSymbol = checker.getSymbolAtLocation(node.expression);
+        }
 
         if (calleeSymbol) {
           const callee = getCalleeNode(calleeSymbol);

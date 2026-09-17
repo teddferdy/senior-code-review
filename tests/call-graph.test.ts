@@ -630,4 +630,1343 @@ export function consumer() {
       ],
     });
   });
+
+  it("resolves an object method call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  run() {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service.run();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves an object property arrow function call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  run: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service.run();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves an object property function expression call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  run: function () {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service.run();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves an object string-literal property arrow function call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  "run": () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service.run();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves an object string-literal property function expression call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  "run": function () {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service.run();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves an object numeric-literal property arrow function call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  42: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service[42]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "42",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves an object numeric-literal property function expression call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  42: function () {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service[42]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "42",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves an object numeric-literal property through string-literal element access", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  42: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service["42"]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "42",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed string-literal property arrow function call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  ["run"]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service["run"]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed string-literal property function expression call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  ["run"]: function () {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service["run"]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed numeric-literal property arrow function call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  [42]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service[42]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "42",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed numeric-literal property function expression call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  [42]: function () {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service[42]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "42",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed identifier property arrow function call", () => {
+    const sources = {
+      "service.ts": `
+const RUN = "run";
+
+export const service = {
+  [RUN]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service["run"]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed identifier property function expression call", () => {
+    const sources = {
+      "service.ts": `
+const RUN = "run";
+
+export const service = {
+  [RUN]: function () {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service["run"]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed identifier numeric property arrow function call", () => {
+    const sources = {
+      "service.ts": `
+const RUN = 42;
+
+export const service = {
+  [RUN]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service[42]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "42",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed identifier numeric property function expression call", () => {
+    const sources = {
+      "service.ts": `
+const RUN = 42;
+
+export const service = {
+  [RUN]: function () {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service[42]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "42",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("ignores a computed identifier property when the key is not statically resolvable", () => {
+    const sources = {
+      "service.ts": `
+declare function getKey(): string;
+
+const RUN = getKey();
+
+export const service = {
+  [RUN]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service["run"]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [],
+    });
+  });
+
+  it("resolves a computed identifier property call using the same identifier", () => {
+    const sources = {
+      "service.ts": `
+const RUN = "run";
+
+export const service = {
+  [RUN]: () => {},
+};
+
+export function consumer() {
+  service[RUN]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "service.ts",
+            line: 8,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "service.ts",
+            line: 9,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a cross-file computed identifier property call", () => {
+    const sources = {
+      "service.ts": `
+export const RUN = "run";
+
+export const service = {
+  [RUN]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service, RUN } from "./service";
+
+export function consumer() {
+  service[RUN]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a cross-file computed identifier property call through an aliased key import", () => {
+    const sources = {
+      "service.ts": `
+export const RUN = "run";
+
+export const service = {
+  [RUN]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service, RUN as EXECUTE } from "./service";
+
+export function consumer() {
+  service[EXECUTE]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed identifier property call through a namespace import", () => {
+    const sources = {
+      "service.ts": `
+export const RUN = "run";
+
+export const service = {
+  [RUN]: () => {},
+};
+`,
+      "consumer.ts": `
+import * as serviceModule from "./service";
+
+export function consumer() {
+  serviceModule.service[serviceModule.RUN]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed template-literal property call", () => {
+    const sources = {
+      "service.ts": `
+export const service = {
+  [\`run\`]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service[\`run\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 3,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a cross-file computed template-literal property call", () => {
+    const sources = {
+      "service.ts": `
+export const RUN = \`run\`;
+
+export const service = {
+  [RUN]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service, RUN } from "./service";
+
+export function consumer() {
+  service[RUN]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a cross-file computed template-literal property call", () => {
+    const sources = {
+      "service.ts": `
+export const RUN = \`run\`;
+
+export const service = {
+  [RUN]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service, RUN } from "./service";
+
+export function consumer() {
+  service[RUN]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed template-expression property with a statically known key", () => {
+    const sources = {
+      "service.ts": `
+const SUFFIX = "n";
+const RUN = \`ru\${SUFFIX}\`;
+
+export const service = {
+  [RUN]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+export function consumer() {
+  service[\`ru\${"n"}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 6,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed template-expression property using a statically known identifier", () => {
+    const sources = {
+      "service.ts": `
+const SUFFIX = "n";
+const RUN = \`ru\${SUFFIX}\`;
+
+export const service = {
+  [RUN]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+const SUFFIX = "n";
+
+export function consumer() {
+  service[\`ru\${SUFFIX}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 6,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 6,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 7,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed template-expression property with a statically known numeric key", () => {
+    const sources = {
+      "service.ts": `
+const INDEX = 42;
+
+export const service = {
+  [\`\${INDEX}\`]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+const INDEX = 42;
+
+export function consumer() {
+  service[\`\${INDEX}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 6,
+          },
+          callee: {
+            symbolName: "42",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 7,
+          },
+        },
+      ],
+    });
+  });
+
+  it("ignores a computed template-expression property when the key is not statically resolvable", () => {
+    const sources = {
+      "service.ts": `
+const suffix = getSuffix();
+
+export const service = {
+  [\`run\${suffix}\`]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+const suffix = getSuffix();
+
+export function consumer() {
+  service[\`run\${suffix}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [],
+    });
+  });
+
+  it("resolves a cross-file computed template-expression property using a statically known identifier", () => {
+    const sources = {
+      "service.ts": `
+export const SUFFIX = "n";
+
+export const service = {
+  [\`ru\${SUFFIX}\`]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service, SUFFIX } from "./service";
+
+export function consumer() {
+  service[\`ru\${SUFFIX}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a cross-file computed template-expression property using a statically known numeric identifier", () => {
+    const sources = {
+      "service.ts": `
+export const INDEX = 42;
+
+export const service = {
+  [\`\${INDEX}\`]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service, INDEX } from "./service";
+
+export function consumer() {
+  service[\`\${INDEX}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "42",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a cross-file computed template-expression property using an aliased numeric identifier", () => {
+    const sources = {
+      "service.ts": `
+export const INDEX = 42;
+
+export const service = {
+  [\`\${INDEX}\`]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service, INDEX as SERVICE_INDEX } from "./service";
+
+export function consumer() {
+  service[\`\${SERVICE_INDEX}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "42",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed template-expression property using a namespace-imported key", () => {
+    const sources = {
+      "service.ts": `
+export const SUFFIX = "n";
+
+export const service = {
+  [\`ru\${SUFFIX}\`]: () => {},
+};
+`,
+      "consumer.ts": `
+import * as serviceModule from "./service";
+
+export function consumer() {
+  serviceModule.service[\`ru\${serviceModule.SUFFIX}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 5,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
+
+  it("resolves a computed template-expression property with multiple statically known interpolations", () => {
+    const sources = {
+      "service.ts": `
+const PREFIX = "get";
+const SUFFIX = "User";
+
+export const service = {
+  [\`\${PREFIX}\${SUFFIX}\`]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+const PREFIX = "get";
+const SUFFIX = "User";
+
+export function consumer() {
+  service[\`\${PREFIX}\${SUFFIX}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 7,
+          },
+          callee: {
+            symbolName: "getUser",
+            filePath: "service.ts",
+            line: 6,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 8,
+          },
+        },
+      ],
+    });
+  });
+
+  it("ignores a computed template-expression property when one interpolation is dynamic", () => {
+    const sources = {
+      "service.ts": `
+const PREFIX = "get";
+const suffix = getSuffix();
+
+export const service = {
+  [\`\${PREFIX}\${suffix}\`]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service } from "./service";
+
+const PREFIX = "get";
+const suffix = getSuffix();
+
+export function consumer() {
+  service[\`\${PREFIX}\${suffix}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [],
+    });
+  });
+
+  it("resolves a cross-file computed template-expression property with multiple statically known interpolations", () => {
+    const sources = {
+      "service.ts": `
+export const PREFIX = "get";
+export const SUFFIX = "User";
+
+export const service = {
+  [\`\${PREFIX}\${SUFFIX}\`]: () => {},
+};
+`,
+      "consumer.ts": `
+import { service, PREFIX, SUFFIX } from "./service";
+
+export function consumer() {
+  service[\`\${PREFIX}\${SUFFIX}\`]();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "getUser",
+            filePath: "service.ts",
+            line: 6,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
 });
