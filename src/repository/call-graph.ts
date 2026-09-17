@@ -141,27 +141,23 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
       return direct;
     }
 
-    // Fallback for class methods: TypeChecker may return a distinct Symbol
-    // instance for a method access (e.g., service.run()) vs the declaration
-    // symbol. They share the same declaration node, so compare by declaration
-    // identity to resolve the callee.
-    const targetDecl = resolved.valueDeclaration ?? resolved.declarations?.[0];
-
-    if (!targetDecl) {
-      return undefined;
-    }
+    const targetDeclarations = resolved.declarations ?? [];
 
     for (const [storedSymbol, node] of functionSymbols.entries()) {
-      const storedDecl =
-        storedSymbol.valueDeclaration ?? storedSymbol.declarations?.[0];
+      const storedDeclarations = storedSymbol.declarations ?? [];
 
-      if (storedDecl === targetDecl) {
-        return node;
-      }
+      for (const targetDeclaration of targetDeclarations) {
+        for (const storedDeclaration of storedDeclarations) {
+          if (storedDeclaration === targetDeclaration) {
+            return node;
+          }
 
-      if (resolved.declarations && storedSymbol.declarations) {
-        for (const decl of resolved.declarations) {
-          if (storedSymbol.declarations.includes(decl)) {
+          if (
+            storedDeclaration.getSourceFile().fileName ===
+              targetDeclaration.getSourceFile().fileName &&
+            storedDeclaration.pos === targetDeclaration.pos &&
+            storedDeclaration.end === targetDeclaration.end
+          ) {
             return node;
           }
         }
@@ -171,6 +167,183 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
     return undefined;
   }
 
+  function getInterfaceMethodImplementation(
+    interfaceMethodSymbol: ts.Symbol,
+    receiverExpression?: ts.Expression,
+  ): ts.Symbol | undefined {
+    if (!receiverExpression) {
+      return undefined;
+    }
+
+    const methodName = resolveSymbol(interfaceMethodSymbol).getName();
+
+    /*
+     * Resolve the concrete receiver from the expression.
+     *
+     * Example:
+     *
+     * const service: Service = new UserService();
+     * service.getUser();
+     *
+     * We intentionally inspect the initializer because the declared
+     * receiver type is the interface (`Service`), while the initializer
+     * tells us the concrete implementation (`UserService`).
+     */
+    let concreteType: ts.Type | undefined;
+
+    if (ts.isIdentifier(receiverExpression)) {
+      const receiverSymbol = checker.getSymbolAtLocation(receiverExpression);
+
+      if (receiverSymbol) {
+        const resolvedReceiverSymbol = resolveSymbol(receiverSymbol);
+
+        const declaration =
+          resolvedReceiverSymbol.valueDeclaration ??
+          resolvedReceiverSymbol.declarations?.[0];
+
+        if (
+          declaration &&
+          ts.isVariableDeclaration(declaration) &&
+          declaration.initializer
+        ) {
+          concreteType = checker.getTypeAtLocation(declaration.initializer);
+        }
+      }
+    } else {
+      concreteType = checker.getTypeAtLocation(receiverExpression);
+    }
+
+    if (!concreteType) {
+      return undefined;
+    }
+
+    /*
+     * Resolve the concrete type's symbol.
+     *
+     * For:
+     *
+     * new UserService()
+     *
+     * this should resolve to the UserService class symbol.
+     */
+    const concreteSymbol = concreteType.getSymbol();
+
+    if (!concreteSymbol) {
+      return undefined;
+    }
+
+    const resolvedConcreteSymbol = resolveSymbol(concreteSymbol);
+
+    /*
+     * Find the actual class declaration and inspect its members
+     * directly. This avoids relying on interface/property symbol
+     * identity.
+     */
+    for (const declaration of resolvedConcreteSymbol.declarations ?? []) {
+      if (!ts.isClassDeclaration(declaration)) {
+        continue;
+      }
+
+      for (const member of declaration.members) {
+        if (!member.name) {
+          continue;
+        }
+
+        let memberName: string | undefined;
+
+        if (ts.isIdentifier(member.name)) {
+          memberName = member.name.text;
+        } else if (
+          ts.isStringLiteral(member.name) ||
+          ts.isNumericLiteral(member.name)
+        ) {
+          memberName = member.name.text;
+        }
+
+        if (memberName !== methodName) {
+          continue;
+        }
+
+        /*
+         * Only methods are valid call-graph method implementations.
+         */
+        if (!ts.isMethodDeclaration(member)) {
+          continue;
+        }
+
+        const methodSymbol = checker.getSymbolAtLocation(member.name);
+
+        if (!methodSymbol) {
+          continue;
+        }
+
+        const resolvedMethodSymbol = resolveSymbol(methodSymbol);
+
+        /*
+         * Return the exact symbol used by the call-graph index whenever
+         * possible.
+         */
+        if (functionSymbols.has(resolvedMethodSymbol)) {
+          return resolvedMethodSymbol;
+        }
+
+        /*
+         * Declaration identity fallback.
+         */
+        for (const [storedSymbol] of functionSymbols.entries()) {
+          if (storedSymbol.declarations?.includes(member)) {
+            return storedSymbol;
+          }
+
+          if (
+            storedSymbol.valueDeclaration &&
+            storedSymbol.valueDeclaration === member
+          ) {
+            return storedSymbol;
+          }
+        }
+      }
+    }
+
+    /*
+     * Final fallback through the concrete type's property symbol.
+     * This keeps the resolver useful for TypeScript symbol layouts where
+     * the class declaration is represented indirectly.
+     */
+    const implementationSymbol = checker.getPropertyOfType(
+      concreteType,
+      methodName,
+    );
+
+    if (!implementationSymbol) {
+      return undefined;
+    }
+
+    const resolvedImplementation = resolveSymbol(implementationSymbol);
+
+    if (functionSymbols.has(resolvedImplementation)) {
+      return resolvedImplementation;
+    }
+
+    const implementationDeclarations =
+      resolvedImplementation.declarations ?? [];
+
+    for (const [storedSymbol] of functionSymbols.entries()) {
+      const storedDeclarations = storedSymbol.declarations ?? [];
+
+      for (const declaration of implementationDeclarations) {
+        if (storedDeclarations.includes(declaration)) {
+          return storedSymbol;
+        }
+      }
+    }
+
+    return undefined;
+  }
+
+  /*
+   * Index functions, methods and function-valued properties.
+   */
   for (const sourceFile of program.getSourceFiles()) {
     const normalizedPath = sourceFile.fileName.replace(/\\/g, "/");
 
@@ -205,9 +378,8 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         node.name &&
         ts.isIdentifier(node.name)
       ) {
-        // Strict scope: skip constructor methods
         if (node.name.text === "constructor") {
-          // do not index constructors
+          // Constructors are intentionally excluded.
         } else {
           let symbol: ts.Symbol | undefined;
 
@@ -222,6 +394,7 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
               if (ts.isObjectLiteralExpression(objectLiteral)) {
                 const objectType = checker.getTypeAtLocation(objectLiteral);
+
                 symbol = checker.getPropertyOfType(objectType, expression.text);
               }
             }
@@ -453,6 +626,7 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           const objectType = checker.getTypeAtLocation(
             node.expression.expression,
           );
+
           const argument = node.expression.argumentExpression;
 
           if (
@@ -495,7 +669,18 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         }
 
         if (calleeSymbol) {
-          const callee = getCalleeNode(calleeSymbol);
+          let callee = getCalleeNode(calleeSymbol);
+
+          if (!callee && ts.isPropertyAccessExpression(node.expression)) {
+            const implementationSymbol = getInterfaceMethodImplementation(
+              calleeSymbol,
+              node.expression.expression,
+            );
+
+            if (implementationSymbol) {
+              callee = getCalleeNode(implementationSymbol);
+            }
+          }
 
           if (callee) {
             const { line } = sourceFile.getLineAndCharacterOfPosition(
