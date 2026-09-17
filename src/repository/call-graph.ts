@@ -225,6 +225,27 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
             });
           }
         }
+      } else if (
+        ts.isVariableDeclaration(node) &&
+        node.name &&
+        ts.isIdentifier(node.name) &&
+        node.initializer &&
+        ts.isArrowFunction(node.initializer)
+      ) {
+        const symbol = checker.getSymbolAtLocation(node.name);
+
+        if (symbol) {
+          const resolved = resolveSymbol(symbol);
+          const { line } = sourceFile.getLineAndCharacterOfPosition(
+            node.name.getStart(sourceFile),
+          );
+
+          functionSymbols.set(resolved, {
+            symbolName: node.name.text,
+            filePath,
+            line: line + 1,
+          });
+        }
       }
 
       ts.forEachChild(node, visit);

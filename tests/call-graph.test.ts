@@ -558,4 +558,40 @@ export function consumer() {
       ],
     });
   });
+
+  it("resolves an arrow function call", () => {
+    const sources = {
+      "service.ts": `
+export const run = () => {};
+`,
+      "consumer.ts": `
+import { run } from "./service";
+
+export function consumer() {
+  run();
+}
+`,
+    };
+
+    expect(buildCallGraph(sources)).toEqual({
+      edges: [
+        {
+          caller: {
+            symbolName: "consumer",
+            filePath: "consumer.ts",
+            line: 4,
+          },
+          callee: {
+            symbolName: "run",
+            filePath: "service.ts",
+            line: 2,
+          },
+          callSite: {
+            filePath: "consumer.ts",
+            line: 5,
+          },
+        },
+      ],
+    });
+  });
 });
