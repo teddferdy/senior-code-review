@@ -1020,7 +1020,10 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
             callees.push(directCallee);
           }
 
-          if (ts.isPropertyAccessExpression(node.expression)) {
+          if (
+            ts.isPropertyAccessExpression(node.expression) ||
+            ts.isElementAccessExpression(node.expression)
+          ) {
             const receiverExpression = node.expression.expression;
 
             /*
