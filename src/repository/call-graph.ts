@@ -177,18 +177,6 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
     const methodName = resolveSymbol(interfaceMethodSymbol).getName();
 
-    /*
-     * Resolve the concrete receiver from the expression.
-     *
-     * Example:
-     *
-     * const service: Service = new UserService();
-     * service.getUser();
-     *
-     * We intentionally inspect the initializer because the declared
-     * receiver type is the interface (`Service`), while the initializer
-     * tells us the concrete implementation (`UserService`).
-     */
     let concreteType: ts.Type | undefined;
 
     if (ts.isIdentifier(receiverExpression)) {
@@ -217,15 +205,6 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
       return undefined;
     }
 
-    /*
-     * Resolve the concrete type's symbol.
-     *
-     * For:
-     *
-     * new UserService()
-     *
-     * this should resolve to the UserService class symbol.
-     */
     const concreteSymbol = concreteType.getSymbol();
 
     if (!concreteSymbol) {
@@ -234,11 +213,6 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
     const resolvedConcreteSymbol = resolveSymbol(concreteSymbol);
 
-    /*
-     * Find the actual class declaration and inspect its members
-     * directly. This avoids relying on interface/property symbol
-     * identity.
-     */
     for (const declaration of resolvedConcreteSymbol.declarations ?? []) {
       if (!ts.isClassDeclaration(declaration)) {
         continue;
@@ -264,9 +238,6 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           continue;
         }
 
-        /*
-         * Only methods are valid call-graph method implementations.
-         */
         if (!ts.isMethodDeclaration(member)) {
           continue;
         }
@@ -279,37 +250,22 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
         const resolvedMethodSymbol = resolveSymbol(methodSymbol);
 
-        /*
-         * Return the exact symbol used by the call-graph index whenever
-         * possible.
-         */
         if (functionSymbols.has(resolvedMethodSymbol)) {
           return resolvedMethodSymbol;
         }
 
-        /*
-         * Declaration identity fallback.
-         */
         for (const [storedSymbol] of functionSymbols.entries()) {
           if (storedSymbol.declarations?.includes(member)) {
             return storedSymbol;
           }
 
-          if (
-            storedSymbol.valueDeclaration &&
-            storedSymbol.valueDeclaration === member
-          ) {
+          if (storedSymbol.valueDeclaration === member) {
             return storedSymbol;
           }
         }
       }
     }
 
-    /*
-     * Final fallback through the concrete type's property symbol.
-     * This keeps the resolver useful for TypeScript symbol layouts where
-     * the class declaration is represented indirectly.
-     */
     const implementationSymbol = checker.getPropertyOfType(
       concreteType,
       methodName,
@@ -341,6 +297,233 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
     return undefined;
   }
 
+  function getReceiverType(
+    receiverExpression: ts.Expression,
+  ): ts.Type | undefined {
+    if (ts.isIdentifier(receiverExpression)) {
+      const receiverSymbol = checker.getSymbolAtLocation(receiverExpression);
+
+      if (receiverSymbol) {
+        const resolvedReceiverSymbol = resolveSymbol(receiverSymbol);
+
+        const declaration =
+          resolvedReceiverSymbol.valueDeclaration ??
+          resolvedReceiverSymbol.declarations?.[0];
+
+        if (declaration && ts.isVariableDeclaration(declaration)) {
+          if (declaration.type) {
+            return checker.getTypeAtLocation(declaration.type);
+          }
+
+          if (declaration.initializer) {
+            return checker.getTypeAtLocation(declaration.initializer);
+          }
+        }
+
+        if (declaration && ts.isParameter(declaration)) {
+          if (declaration.type) {
+            return checker.getTypeAtLocation(declaration.type);
+          }
+
+          return checker.getTypeAtLocation(receiverExpression);
+        }
+      }
+    }
+
+    return checker.getTypeAtLocation(receiverExpression);
+  }
+
+  function sameDeclaration(
+    left: ts.Declaration,
+    right: ts.Declaration,
+  ): boolean {
+    if (left === right) {
+      return true;
+    }
+
+    return (
+      left.getSourceFile().fileName === right.getSourceFile().fileName &&
+      left.pos === right.pos &&
+      left.end === right.end
+    );
+  }
+
+  function getTypeDeclarations(type: ts.Type): ts.Declaration[] {
+    const symbol = type.getSymbol();
+
+    if (!symbol) {
+      return [];
+    }
+
+    const resolved = resolveSymbol(symbol);
+
+    return resolved.declarations ?? [];
+  }
+
+  function isNominallyCompatibleClass(
+    candidate: ts.ClassDeclaration,
+    receiverType: ts.Type,
+  ): boolean {
+    const receiverDeclarations = getTypeDeclarations(receiverType);
+
+    if (receiverDeclarations.length === 0) {
+      return false;
+    }
+
+    const visited = new Set<ts.Declaration>();
+
+    function visit(
+      declaration: ts.ClassDeclaration | ts.InterfaceDeclaration,
+    ): boolean {
+      if (visited.has(declaration)) {
+        return false;
+      }
+
+      visited.add(declaration);
+
+      for (const receiverDeclaration of receiverDeclarations) {
+        if (sameDeclaration(declaration, receiverDeclaration)) {
+          return true;
+        }
+      }
+
+      for (const heritageClause of declaration.heritageClauses ?? []) {
+        const isRelevantClassHeritage =
+          ts.isClassDeclaration(declaration) &&
+          (heritageClause.token === ts.SyntaxKind.ExtendsKeyword ||
+            heritageClause.token === ts.SyntaxKind.ImplementsKeyword);
+
+        const isRelevantInterfaceHeritage =
+          ts.isInterfaceDeclaration(declaration) &&
+          heritageClause.token === ts.SyntaxKind.ExtendsKeyword;
+
+        if (!isRelevantClassHeritage && !isRelevantInterfaceHeritage) {
+          continue;
+        }
+
+        for (const typeNode of heritageClause.types) {
+          const baseSymbol = checker.getSymbolAtLocation(typeNode.expression);
+
+          if (!baseSymbol) {
+            continue;
+          }
+
+          const resolvedBaseSymbol = resolveSymbol(baseSymbol);
+
+          for (const baseDeclaration of resolvedBaseSymbol.declarations ?? []) {
+            if (
+              ts.isClassDeclaration(baseDeclaration) ||
+              ts.isInterfaceDeclaration(baseDeclaration)
+            ) {
+              if (visit(baseDeclaration)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+
+      return false;
+    }
+
+    return visit(candidate);
+  }
+
+  function isPolymorphicReceiver(receiverExpression: ts.Expression): boolean {
+    if (!ts.isIdentifier(receiverExpression)) {
+      return false;
+    }
+
+    const receiverSymbol = checker.getSymbolAtLocation(receiverExpression);
+
+    if (!receiverSymbol) {
+      return false;
+    }
+
+    const resolvedReceiverSymbol = resolveSymbol(receiverSymbol);
+
+    const declaration =
+      resolvedReceiverSymbol.valueDeclaration ??
+      resolvedReceiverSymbol.declarations?.[0];
+
+    if (!declaration || !ts.isParameter(declaration)) {
+      return false;
+    }
+
+    return Boolean(declaration.type);
+  }
+
+  function getPolymorphicMethodImplementations(
+    methodName: string,
+    receiverType: ts.Type,
+  ): ts.Symbol[] {
+    const implementations: ts.Symbol[] = [];
+    const seenDeclarations = new Set<ts.Declaration>();
+
+    function addImplementation(
+      implementationSymbol: ts.Symbol | undefined,
+    ): void {
+      if (!implementationSymbol) {
+        return;
+      }
+
+      const resolvedImplementation = resolveSymbol(implementationSymbol);
+
+      for (const declaration of resolvedImplementation.declarations ?? []) {
+        if (seenDeclarations.has(declaration)) {
+          continue;
+        }
+
+        seenDeclarations.add(declaration);
+        implementations.push(resolvedImplementation);
+      }
+    }
+
+    for (const sourceFile of program.getSourceFiles()) {
+      const normalizedPath = sourceFile.fileName.replace(/\\/g, "/");
+
+      if (!normalizedPath.startsWith(`${VIRTUAL_ROOT}/`)) {
+        continue;
+      }
+
+      const filePath = fromVirtualPath(normalizedPath);
+
+      if (sources[filePath] === undefined) {
+        continue;
+      }
+
+      function visit(node: ts.Node): void {
+        if (ts.isClassDeclaration(node)) {
+          /*
+           * Only classes that are nominally related to the
+           * receiver type participate in polymorphic dispatch.
+           *
+           * This intentionally does not use
+           * checker.isTypeAssignableTo(), because TypeScript
+           * uses structural typing and an unrelated class with
+           * the same public shape could otherwise be included.
+           */
+          if (isNominallyCompatibleClass(node, receiverType)) {
+            const classType = checker.getTypeAtLocation(node);
+
+            const implementationSymbol = checker.getPropertyOfType(
+              classType,
+              methodName,
+            );
+
+            addImplementation(implementationSymbol);
+          }
+        }
+
+        ts.forEachChild(node, visit);
+      }
+
+      visit(sourceFile);
+    }
+
+    return implementations;
+  }
+
   /*
    * Index functions, methods and function-valued properties.
    */
@@ -363,6 +546,7 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
         if (symbol) {
           const resolved = resolveSymbol(symbol);
+
           const { line } = sourceFile.getLineAndCharacterOfPosition(
             node.name.getStart(sourceFile),
           );
@@ -381,62 +565,17 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         if (node.name.text === "constructor") {
           // Constructors are intentionally excluded.
         } else {
-          let symbol: ts.Symbol | undefined;
-
-          if (node.name.kind === ts.SyntaxKind.ComputedPropertyName) {
-            const expression = node.name.expression;
-
-            if (
-              ts.isStringLiteral(expression) ||
-              ts.isNumericLiteral(expression)
-            ) {
-              const objectLiteral = node.parent;
-
-              if (ts.isObjectLiteralExpression(objectLiteral)) {
-                const objectType = checker.getTypeAtLocation(objectLiteral);
-
-                symbol = checker.getPropertyOfType(objectType, expression.text);
-              }
-            }
-          } else {
-            symbol = checker.getSymbolAtLocation(node.name);
-          }
+          const symbol = checker.getSymbolAtLocation(node.name);
 
           if (symbol) {
             const resolved = resolveSymbol(symbol);
+
             const { line } = sourceFile.getLineAndCharacterOfPosition(
               node.name.getStart(sourceFile),
             );
 
             functionSymbols.set(resolved, {
-              symbolName:
-                node.name.kind === ts.SyntaxKind.ComputedPropertyName
-                  ? (() => {
-                      const expression = node.name.expression;
-
-                      if (
-                        ts.isStringLiteral(expression) ||
-                        ts.isNumericLiteral(expression) ||
-                        ts.isNoSubstitutionTemplateLiteral(expression)
-                      ) {
-                        return expression.text;
-                      }
-
-                      if (ts.isIdentifier(expression)) {
-                        const expressionType =
-                          checker.getTypeAtLocation(expression);
-
-                        if (
-                          expressionType.isStringLiteral() ||
-                          expressionType.isNumberLiteral()
-                        ) {
-                          return expressionType.value.toString();
-                        }
-                      }
-
-                      return expression.getText(sourceFile);
-                    })()
-                  : node.name.text,
+              symbolName: node.name.text,
               filePath,
               line: line + 1,
             });
@@ -454,6 +593,7 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
         if (symbol) {
           const resolved = resolveSymbol(symbol);
+
           const { line } = sourceFile.getLineAndCharacterOfPosition(
             node.name.getStart(sourceFile),
           );
@@ -475,7 +615,7 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
       ) {
         let symbol: ts.Symbol | undefined;
 
-        if (node.name.kind === ts.SyntaxKind.ComputedPropertyName) {
+        if (ts.isComputedPropertyName(node.name)) {
           const expression = node.name.expression;
 
           if (
@@ -516,51 +656,53 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
         if (symbol) {
           const resolved = resolveSymbol(symbol);
+
           const { line } = sourceFile.getLineAndCharacterOfPosition(
             node.name.getStart(sourceFile),
           );
 
+          let symbolName: string;
+
+          if (ts.isComputedPropertyName(node.name)) {
+            const expression = node.name.expression;
+
+            if (
+              ts.isStringLiteral(expression) ||
+              ts.isNumericLiteral(expression) ||
+              ts.isNoSubstitutionTemplateLiteral(expression)
+            ) {
+              symbolName = expression.text;
+            } else if (ts.isTemplateExpression(expression)) {
+              const expressionType = checker.getTypeAtLocation(expression);
+
+              if (
+                expressionType.isStringLiteral() ||
+                expressionType.isNumberLiteral()
+              ) {
+                symbolName = expressionType.value.toString();
+              } else {
+                symbolName = expression.getText(sourceFile);
+              }
+            } else if (ts.isIdentifier(expression)) {
+              const expressionType = checker.getTypeAtLocation(expression);
+
+              if (
+                expressionType.isStringLiteral() ||
+                expressionType.isNumberLiteral()
+              ) {
+                symbolName = expressionType.value.toString();
+              } else {
+                symbolName = expression.getText(sourceFile);
+              }
+            } else {
+              symbolName = expression.getText(sourceFile);
+            }
+          } else {
+            symbolName = node.name.text;
+          }
+
           functionSymbols.set(resolved, {
-            symbolName:
-              node.name.kind === ts.SyntaxKind.ComputedPropertyName
-                ? (() => {
-                    const expression = node.name.expression;
-
-                    if (
-                      ts.isStringLiteral(expression) ||
-                      ts.isNumericLiteral(expression) ||
-                      ts.isNoSubstitutionTemplateLiteral(expression)
-                    ) {
-                      return expression.text;
-                    }
-
-                    if (ts.isTemplateExpression(expression)) {
-                      const expressionType =
-                        checker.getTypeAtLocation(expression);
-
-                      if (
-                        expressionType.isStringLiteral() ||
-                        expressionType.isNumberLiteral()
-                      ) {
-                        return expressionType.value.toString();
-                      }
-                    }
-
-                    if (ts.isIdentifier(expression)) {
-                      const expressionType =
-                        checker.getTypeAtLocation(expression);
-
-                      if (
-                        expressionType.isStringLiteral() ||
-                        expressionType.isNumberLiteral()
-                      ) {
-                        return expressionType.value.toString();
-                      }
-                    }
-
-                    return expression.getText(sourceFile);
-                  })()
-                : node.name.text,
+            symbolName,
             filePath,
             line: line + 1,
           });
@@ -669,32 +811,103 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         }
 
         if (calleeSymbol) {
-          let callee = getCalleeNode(calleeSymbol);
+          const callees: CallGraphNode[] = [];
 
-          if (!callee && ts.isPropertyAccessExpression(node.expression)) {
+          const directCallee = getCalleeNode(calleeSymbol);
+
+          if (directCallee) {
+            callees.push(directCallee);
+          }
+
+          if (ts.isPropertyAccessExpression(node.expression)) {
+            const receiverExpression = node.expression.expression;
+
+            /*
+             * Preserve Phase 6.4 interface/concrete
+             * implementation resolution.
+             */
             const implementationSymbol = getInterfaceMethodImplementation(
               calleeSymbol,
-              node.expression.expression,
+              receiverExpression,
             );
 
             if (implementationSymbol) {
-              callee = getCalleeNode(implementationSymbol);
+              const implementation = getCalleeNode(implementationSymbol);
+
+              if (
+                implementation &&
+                !callees.some(
+                  (existing) =>
+                    existing.filePath === implementation.filePath &&
+                    existing.line === implementation.line &&
+                    existing.symbolName === implementation.symbolName,
+                )
+              ) {
+                callees.push(implementation);
+              }
+            }
+
+            /*
+             * Phase 6.6 polymorphic dispatch.
+             *
+             * Only expand calls where the receiver is a
+             * typed parameter. This represents an unknown
+             * runtime concrete implementation.
+             *
+             * Example:
+             *
+             * function consumer(service: UserService) {
+             *   service.getUser();
+             * }
+             *
+             * Possible implementations:
+             *
+             * UserService.getUser
+             * AdminService.getUser
+             */
+            if (isPolymorphicReceiver(receiverExpression)) {
+              const receiverType = getReceiverType(receiverExpression);
+
+              if (receiverType) {
+                const polymorphicSymbols = getPolymorphicMethodImplementations(
+                  resolveSymbol(calleeSymbol).getName(),
+                  receiverType,
+                );
+
+                for (const polymorphicSymbol of polymorphicSymbols) {
+                  const polymorphicCallee = getCalleeNode(polymorphicSymbol);
+
+                  if (
+                    polymorphicCallee &&
+                    !callees.some(
+                      (existing) =>
+                        existing.filePath === polymorphicCallee.filePath &&
+                        existing.line === polymorphicCallee.line &&
+                        existing.symbolName === polymorphicCallee.symbolName,
+                    )
+                  ) {
+                    callees.push(polymorphicCallee);
+                  }
+                }
+              }
             }
           }
 
-          if (callee) {
+          if (callees.length > 0) {
             const { line } = sourceFile.getLineAndCharacterOfPosition(
               node.expression.getStart(sourceFile),
             );
 
-            edges.push({
-              caller,
-              callee,
-              callSite: {
-                filePath,
-                line: line + 1,
-              },
-            });
+            for (const callee of callees) {
+              edges.push({
+                caller,
+                callee,
+                callSite: {
+                  filePath,
+                  line: line + 1,
+                },
+              });
+            }
           }
         }
       }

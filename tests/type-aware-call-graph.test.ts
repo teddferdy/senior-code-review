@@ -222,4 +222,182 @@ export function consumer() {
       }),
     );
   });
+
+  it("resolves polymorphic dispatch to all compatible implementations", () => {
+    const sources = {
+      "service.ts": `
+export class UserService {
+  getUser() {}
+}
+
+export class AdminService extends UserService {
+  getUser() {}
+}
+`,
+      "consumer.ts": `
+import { UserService, AdminService } from "./service";
+
+export function consumer(service: UserService) {
+  service.getUser();
+}
+
+export function run() {
+  consumer(new UserService());
+  consumer(new AdminService());
+}
+`,
+    };
+
+    const result = buildCallGraph(sources);
+
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "service.ts",
+          line: 3,
+        }),
+      }),
+    );
+
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "service.ts",
+          line: 7,
+        }),
+      }),
+    );
+  });
+
+  it("resolves polymorphic dispatch across files", () => {
+    const sources = {
+      "domain/user-service.ts": `
+export class UserService {
+  getUser() {}
+}
+`,
+      "domain/admin-service.ts": `
+import { UserService } from "./user-service";
+
+export class AdminService extends UserService {
+  getUser() {}
+}
+`,
+      "app/consumer.ts": `
+import { UserService } from "../domain/user-service";
+import { AdminService } from "../domain/admin-service";
+
+export function consumer(service: UserService) {
+  service.getUser();
+}
+
+export function run() {
+  consumer(new UserService());
+  consumer(new AdminService());
+}
+`,
+    };
+
+    const result = buildCallGraph(sources);
+
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "domain/user-service.ts",
+          line: 3,
+        }),
+      }),
+    );
+
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "domain/admin-service.ts",
+          line: 5,
+        }),
+      }),
+    );
+  });
+
+  it("does not include unrelated same-name methods in polymorphic dispatch", () => {
+    const sources = {
+      "service.ts": `
+export class UserService {
+  getUser() {}
+}
+
+export class AdminService extends UserService {
+  getUser() {}
+}
+
+export class AuditService {
+  getUser() {}
+}
+`,
+      "consumer.ts": `
+import { UserService } from "./service";
+
+export function consumer(service: UserService) {
+  service.getUser();
+}
+`,
+    };
+
+    const result = buildCallGraph(sources);
+
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "service.ts",
+          line: 3,
+        }),
+      }),
+    );
+
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "service.ts",
+          line: 7,
+        }),
+      }),
+    );
+
+    expect(result.edges).not.toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "service.ts",
+          line: 11,
+        }),
+      }),
+    );
+  });
 });
