@@ -605,6 +605,29 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           });
         }
       } else if (
+        ts.isPropertyDeclaration(node) &&
+        node.name &&
+        ts.isIdentifier(node.name) &&
+        node.initializer &&
+        (ts.isArrowFunction(node.initializer) ||
+          ts.isFunctionExpression(node.initializer))
+      ) {
+        const symbol = checker.getSymbolAtLocation(node.name);
+
+        if (symbol) {
+          const resolved = resolveSymbol(symbol);
+
+          const { line } = sourceFile.getLineAndCharacterOfPosition(
+            node.name.getStart(sourceFile),
+          );
+
+          functionSymbols.set(resolved, {
+            symbolName: node.name.text,
+            filePath,
+            line: line + 1,
+          });
+        }
+      } else if (
         ts.isPropertyAssignment(node) &&
         (ts.isIdentifier(node.name) ||
           ts.isStringLiteral(node.name) ||
@@ -850,6 +873,29 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           }
         } else if (
           ts.isVariableDeclaration(current) &&
+          current.name &&
+          ts.isIdentifier(current.name) &&
+          current.initializer &&
+          (ts.isArrowFunction(current.initializer) ||
+            ts.isFunctionExpression(current.initializer))
+        ) {
+          const symbol = checker.getSymbolAtLocation(current.name);
+
+          if (symbol) {
+            const caller = getCalleeNode(symbol);
+
+            if (caller) {
+              return caller;
+            }
+          }
+
+          const byDeclaration = getCallerByDeclaration(current);
+
+          if (byDeclaration) {
+            return byDeclaration;
+          }
+        } else if (
+          ts.isPropertyDeclaration(current) &&
           current.name &&
           ts.isIdentifier(current.name) &&
           current.initializer &&
