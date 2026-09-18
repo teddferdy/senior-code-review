@@ -101,4 +101,125 @@ export function consumer() {
       }),
     );
   });
+
+  it("resolves an inherited method through a subclass instance", () => {
+    const sources = {
+      "service.ts": `
+export class UserService {
+  getUser() {}
+}
+
+export class AdminService extends UserService {}
+`,
+      "consumer.ts": `
+import { AdminService } from "./service";
+
+export function consumer() {
+  const service = new AdminService();
+  service.getUser();
+}
+`,
+    };
+
+    const result = buildCallGraph(sources);
+
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "service.ts",
+        }),
+      }),
+    );
+  });
+
+  it("resolves an inherited method across files", () => {
+    const sources = {
+      "domain/user-service.ts": `
+export class UserService {
+  getUser() {}
+}
+`,
+      "domain/admin-service.ts": `
+import { UserService } from "./user-service";
+
+export class AdminService extends UserService {}
+`,
+      "app/consumer.ts": `
+import { AdminService } from "../domain/admin-service";
+
+export function consumer() {
+  const service = new AdminService();
+  service.getUser();
+}
+`,
+    };
+
+    const result = buildCallGraph(sources);
+
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "domain/user-service.ts",
+        }),
+      }),
+    );
+  });
+
+  it("resolves an overridden method on the subclass instead of the parent", () => {
+    const sources = {
+      "service.ts": `
+export class UserService {
+  getUser() {}
+}
+
+export class AdminService extends UserService {
+  getUser() {}
+}
+`,
+      "consumer.ts": `
+import { AdminService } from "./service";
+
+export function consumer() {
+  const service = new AdminService();
+  service.getUser();
+}
+`,
+    };
+
+    const result = buildCallGraph(sources);
+
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "service.ts",
+          line: 7,
+        }),
+      }),
+    );
+
+    expect(result.edges).not.toContainEqual(
+      expect.objectContaining({
+        caller: expect.objectContaining({
+          symbolName: "consumer",
+        }),
+        callee: expect.objectContaining({
+          symbolName: "getUser",
+          filePath: "service.ts",
+          line: 3,
+        }),
+      }),
+    );
+  });
 });
