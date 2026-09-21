@@ -560,9 +560,15 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
       } else if (
         ts.isMethodDeclaration(node) &&
         node.name &&
-        ts.isIdentifier(node.name)
+        (ts.isIdentifier(node.name) ||
+          ts.isStringLiteral(node.name) ||
+          ts.isNumericLiteral(node.name) ||
+          ts.isComputedPropertyName(node.name))
       ) {
-        if (node.name.text === "constructor") {
+        const isConstructor =
+          ts.isIdentifier(node.name) && node.name.text === "constructor";
+
+        if (isConstructor) {
           // Constructors are intentionally excluded.
         } else {
           const symbol = checker.getSymbolAtLocation(node.name);
@@ -570,15 +576,23 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           if (symbol) {
             const resolved = resolveSymbol(symbol);
 
-            const { line } = sourceFile.getLineAndCharacterOfPosition(
-              node.name.getStart(sourceFile),
-            );
+            /*
+             * Dynamically-keyed methods (e.g. [getKey()]) have no
+             * statically-known name and remain unresolved.
+             */
+            if (resolved.getName() !== "__computed") {
+              const { line } = sourceFile.getLineAndCharacterOfPosition(
+                node.name.getStart(sourceFile),
+              );
 
-            functionSymbols.set(resolved, {
-              symbolName: node.name.text,
-              filePath,
-              line: line + 1,
-            });
+              functionSymbols.set(resolved, {
+                symbolName: ts.isComputedPropertyName(node.name)
+                  ? resolved.getName()
+                  : node.name.text,
+                filePath,
+                line: line + 1,
+              });
+            }
           }
         }
       } else if (
@@ -852,9 +866,16 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         } else if (
           ts.isMethodDeclaration(current) &&
           current.name &&
-          ts.isIdentifier(current.name)
+          (ts.isIdentifier(current.name) ||
+            ts.isStringLiteral(current.name) ||
+            ts.isNumericLiteral(current.name) ||
+            ts.isComputedPropertyName(current.name))
         ) {
-          if (current.name.text !== "constructor") {
+          const isConstructor =
+            ts.isIdentifier(current.name) &&
+            current.name.text === "constructor";
+
+          if (!isConstructor) {
             const symbol = checker.getSymbolAtLocation(current.name);
 
             if (symbol) {
