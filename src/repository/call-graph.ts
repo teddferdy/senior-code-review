@@ -966,8 +966,8 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         let calleeSymbol: ts.Symbol | undefined;
 
         if (ts.isElementAccessExpression(node.expression)) {
-          const objectType = checker.getTypeAtLocation(
-            node.expression.expression,
+          const objectType = checker.getNonNullableType(
+            checker.getTypeAtLocation(node.expression.expression),
           );
 
           const argument = node.expression.argumentExpression;
