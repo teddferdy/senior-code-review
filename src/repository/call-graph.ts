@@ -525,6 +525,24 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
   }
 
   /*
+   * Strip parenthesized wrappers around a call's callee expression.
+   *
+   * (s.run)(), ((helper))() and (s["run"])() are semantically
+   * identical to their unwrapped forms.
+   */
+  function unwrapParenthesizedExpression(
+    expression: ts.Expression,
+  ): ts.Expression {
+    let current = expression;
+
+    while (ts.isParenthesizedExpression(current)) {
+      current = current.expression;
+    }
+
+    return current;
+  }
+
+  /*
    * Index functions, methods and function-valued properties.
    */
   for (const sourceFile of program.getSourceFiles()) {
@@ -971,11 +989,15 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
     }
 
     function visit(node: ts.Node): void {
+      const calleeExpression = ts.isCallExpression(node)
+        ? unwrapParenthesizedExpression(node.expression)
+        : undefined;
+
       if (
-        ts.isCallExpression(node) &&
-        (ts.isIdentifier(node.expression) ||
-          ts.isPropertyAccessExpression(node.expression) ||
-          ts.isElementAccessExpression(node.expression))
+        calleeExpression &&
+        (ts.isIdentifier(calleeExpression) ||
+          ts.isPropertyAccessExpression(calleeExpression) ||
+          ts.isElementAccessExpression(calleeExpression))
       ) {
         const caller = findCaller(node);
 
@@ -986,12 +1008,12 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
         let calleeSymbol: ts.Symbol | undefined;
 
-        if (ts.isElementAccessExpression(node.expression)) {
+        if (ts.isElementAccessExpression(calleeExpression)) {
           const objectType = checker.getNonNullableType(
-            checker.getTypeAtLocation(node.expression.expression),
+            checker.getTypeAtLocation(calleeExpression.expression),
           );
 
-          const argument = node.expression.argumentExpression;
+          const argument = calleeExpression.argumentExpression;
 
           if (
             argument &&
@@ -1029,7 +1051,7 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
             }
           }
         } else {
-          calleeSymbol = checker.getSymbolAtLocation(node.expression);
+          calleeSymbol = checker.getSymbolAtLocation(calleeExpression);
         }
 
         if (calleeSymbol) {
@@ -1042,10 +1064,10 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           }
 
           if (
-            ts.isPropertyAccessExpression(node.expression) ||
-            ts.isElementAccessExpression(node.expression)
+            ts.isPropertyAccessExpression(calleeExpression) ||
+            ts.isElementAccessExpression(calleeExpression)
           ) {
-            const receiverExpression = node.expression.expression;
+            const receiverExpression = calleeExpression.expression;
 
             /*
              * Preserve Phase 6.4 interface/concrete
@@ -1120,7 +1142,7 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
           if (callees.length > 0) {
             const { line } = sourceFile.getLineAndCharacterOfPosition(
-              node.expression.getStart(sourceFile),
+              calleeExpression.getStart(sourceFile),
             );
 
             for (const callee of callees) {
