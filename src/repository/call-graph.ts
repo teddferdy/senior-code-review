@@ -647,7 +647,10 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
       } else if (
         ts.isPropertyDeclaration(node) &&
         node.name &&
-        ts.isIdentifier(node.name) &&
+        (ts.isIdentifier(node.name) ||
+          ts.isStringLiteral(node.name) ||
+          ts.isNumericLiteral(node.name) ||
+          ts.isComputedPropertyName(node.name)) &&
         node.initializer &&
         (ts.isArrowFunction(node.initializer) ||
           ts.isFunctionExpression(node.initializer))
@@ -657,15 +660,24 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         if (symbol) {
           const resolved = resolveSymbol(symbol);
 
-          const { line } = sourceFile.getLineAndCharacterOfPosition(
-            node.name.getStart(sourceFile),
-          );
+          /*
+           * Dynamically-keyed class properties (e.g. [getKey()]) have no
+           * statically-known name and remain unresolved. This mirrors the
+           * existing MethodDeclaration handling.
+           */
+          if (resolved.getName() !== "__computed") {
+            const { line } = sourceFile.getLineAndCharacterOfPosition(
+              node.name.getStart(sourceFile),
+            );
 
-          functionSymbols.set(resolved, {
-            symbolName: node.name.text,
-            filePath,
-            line: line + 1,
-          });
+            functionSymbols.set(resolved, {
+              symbolName: ts.isComputedPropertyName(node.name)
+                ? resolved.getName()
+                : node.name.text,
+              filePath,
+              line: line + 1,
+            });
+          }
         }
       } else if (
         ts.isPropertyAssignment(node) &&
@@ -944,7 +956,10 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         } else if (
           ts.isPropertyDeclaration(current) &&
           current.name &&
-          ts.isIdentifier(current.name) &&
+          (ts.isIdentifier(current.name) ||
+            ts.isStringLiteral(current.name) ||
+            ts.isNumericLiteral(current.name) ||
+            ts.isComputedPropertyName(current.name)) &&
           current.initializer &&
           (ts.isArrowFunction(current.initializer) ||
             ts.isFunctionExpression(current.initializer))
