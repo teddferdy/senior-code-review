@@ -525,19 +525,24 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
   }
 
   /*
-   * Strip parenthesized and non-null-assertion wrappers around a call's
-   * callee expression.
+   * Strip parenthesized, non-null-assertion and type-assertion wrappers
+   * around a call's callee expression.
    *
    * (s.run)(), ((helper))(), (s["run"])(), helper!(), s.run!(),
-   * s["run"]!(), (s.run)!() and (helper!)() are semantically
-   * identical to their unwrapped forms.
+   * s["run"]!(), (s.run)!(), (helper!)(), (helper as Fn)(),
+   * (<Fn>helper)(), (helper satisfies Fn)(), (s.run as Fn)(),
+   * (s["run"] as Fn)(), ((helper as Fn))(), (helper as Fn)!() and
+   * (helper! as Fn)() are semantically identical to their unwrapped forms.
    */
   function unwrapCalleeExpression(expression: ts.Expression): ts.Expression {
     let current = expression;
 
     while (
       ts.isParenthesizedExpression(current) ||
-      ts.isNonNullExpression(current)
+      ts.isNonNullExpression(current) ||
+      ts.isAsExpression(current) ||
+      ts.isTypeAssertionExpression(current) ||
+      ts.isSatisfiesExpression(current)
     ) {
       current = current.expression;
     }
