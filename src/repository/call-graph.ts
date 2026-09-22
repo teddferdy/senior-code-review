@@ -526,15 +526,19 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
 
   /*
    * Strip parenthesized, non-null-assertion and type-assertion wrappers
-   * around a call's callee expression.
+   * around a call's callee expression or an element-access argument.
    *
    * (s.run)(), ((helper))(), (s["run"])(), helper!(), s.run!(),
    * s["run"]!(), (s.run)!(), (helper!)(), (helper as Fn)(),
    * (<Fn>helper)(), (helper satisfies Fn)(), (s.run as Fn)(),
    * (s["run"] as Fn)(), ((helper as Fn))(), (helper as Fn)!() and
    * (helper! as Fn)() are semantically identical to their unwrapped forms.
+   *
+   * The same wrappers are erased for element-access keys:
+   * s["run" as string](), s["run" satisfies string](),
+   * s[("run")](), s[RUN!](), s[RUN as string]() etc.
    */
-  function unwrapCalleeExpression(expression: ts.Expression): ts.Expression {
+  function unwrapExpression(expression: ts.Expression): ts.Expression {
     let current = expression;
 
     while (
@@ -548,6 +552,10 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
     }
 
     return current;
+  }
+
+  function unwrapCalleeExpression(expression: ts.Expression): ts.Expression {
+    return unwrapExpression(expression);
   }
 
   /*
@@ -1036,7 +1044,10 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
             checker.getTypeAtLocation(calleeExpression.expression),
           );
 
-          const argument = calleeExpression.argumentExpression;
+          const rawArgument = calleeExpression.argumentExpression;
+          const argument = rawArgument
+            ? (unwrapExpression(rawArgument as ts.Expression) as ts.Expression)
+            : undefined;
 
           if (
             argument &&
