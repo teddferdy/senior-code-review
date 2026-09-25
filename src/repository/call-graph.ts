@@ -701,24 +701,31 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         ts.isVariableDeclaration(node) &&
         node.name &&
         ts.isIdentifier(node.name) &&
-        node.initializer &&
-        (ts.isArrowFunction(node.initializer) ||
-          ts.isFunctionExpression(node.initializer))
+        node.initializer
       ) {
-        const symbol = checker.getSymbolAtLocation(node.name);
+        const unwrappedInitializer = unwrapExpression(
+          node.initializer as ts.Expression,
+        ) as ts.Expression;
 
-        if (symbol) {
-          const resolved = resolveSymbol(symbol);
+        if (
+          ts.isArrowFunction(unwrappedInitializer) ||
+          ts.isFunctionExpression(unwrappedInitializer)
+        ) {
+          const symbol = checker.getSymbolAtLocation(node.name);
 
-          const { line } = sourceFile.getLineAndCharacterOfPosition(
-            node.name.getStart(sourceFile),
-          );
+          if (symbol) {
+            const resolved = resolveSymbol(symbol);
 
-          functionSymbols.set(resolved, {
-            symbolName: node.name.text,
-            filePath,
-            line: line + 1,
-          });
+            const { line } = sourceFile.getLineAndCharacterOfPosition(
+              node.name.getStart(sourceFile),
+            );
+
+            functionSymbols.set(resolved, {
+              symbolName: node.name.text,
+              filePath,
+              line: line + 1,
+            });
+          }
         }
       } else if (
         ts.isPropertyDeclaration(node) &&
@@ -727,32 +734,39 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           ts.isStringLiteral(node.name) ||
           ts.isNumericLiteral(node.name) ||
           ts.isComputedPropertyName(node.name)) &&
-        node.initializer &&
-        (ts.isArrowFunction(node.initializer) ||
-          ts.isFunctionExpression(node.initializer))
+        node.initializer
       ) {
-        const symbol = checker.getSymbolAtLocation(node.name);
+        const unwrappedInitializer = unwrapExpression(
+          node.initializer as ts.Expression,
+        ) as ts.Expression;
 
-        if (symbol) {
-          const resolved = resolveSymbol(symbol);
+        if (
+          ts.isArrowFunction(unwrappedInitializer) ||
+          ts.isFunctionExpression(unwrappedInitializer)
+        ) {
+          const symbol = checker.getSymbolAtLocation(node.name);
 
-          /*
-           * Dynamically-keyed class properties (e.g. [getKey()]) have no
-           * statically-known name and remain unresolved. This mirrors the
-           * existing MethodDeclaration handling.
-           */
-          if (resolved.getName() !== "__computed") {
-            const { line } = sourceFile.getLineAndCharacterOfPosition(
-              node.name.getStart(sourceFile),
-            );
+          if (symbol) {
+            const resolved = resolveSymbol(symbol);
 
-            functionSymbols.set(resolved, {
-              symbolName: ts.isComputedPropertyName(node.name)
-                ? resolved.getName()
-                : node.name.text,
-              filePath,
-              line: line + 1,
-            });
+            /*
+             * Dynamically-keyed class properties (e.g. [getKey()]) have no
+             * statically-known name and remain unresolved. This mirrors the
+             * existing MethodDeclaration handling.
+             */
+            if (resolved.getName() !== "__computed") {
+              const { line } = sourceFile.getLineAndCharacterOfPosition(
+                node.name.getStart(sourceFile),
+              );
+
+              functionSymbols.set(resolved, {
+                symbolName: ts.isComputedPropertyName(node.name)
+                  ? resolved.getName()
+                  : node.name.text,
+                filePath,
+                line: line + 1,
+              });
+            }
           }
         }
       } else if (
@@ -1084,24 +1098,31 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           ts.isVariableDeclaration(current) &&
           current.name &&
           ts.isIdentifier(current.name) &&
-          current.initializer &&
-          (ts.isArrowFunction(current.initializer) ||
-            ts.isFunctionExpression(current.initializer))
+          current.initializer
         ) {
-          const symbol = checker.getSymbolAtLocation(current.name);
+          const unwrappedInitializer = unwrapExpression(
+            current.initializer as ts.Expression,
+          ) as ts.Expression;
 
-          if (symbol) {
-            const caller = getCalleeNode(symbol);
+          if (
+            ts.isArrowFunction(unwrappedInitializer) ||
+            ts.isFunctionExpression(unwrappedInitializer)
+          ) {
+            const symbol = checker.getSymbolAtLocation(current.name);
 
-            if (caller) {
-              return caller;
+            if (symbol) {
+              const caller = getCalleeNode(symbol);
+
+              if (caller) {
+                return caller;
+              }
             }
-          }
 
-          const byDeclaration = getCallerByDeclaration(current);
+            const byDeclaration = getCallerByDeclaration(current);
 
-          if (byDeclaration) {
-            return byDeclaration;
+            if (byDeclaration) {
+              return byDeclaration;
+            }
           }
         } else if (
           ts.isPropertyDeclaration(current) &&
@@ -1110,24 +1131,31 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
             ts.isStringLiteral(current.name) ||
             ts.isNumericLiteral(current.name) ||
             ts.isComputedPropertyName(current.name)) &&
-          current.initializer &&
-          (ts.isArrowFunction(current.initializer) ||
-            ts.isFunctionExpression(current.initializer))
+          current.initializer
         ) {
-          const symbol = checker.getSymbolAtLocation(current.name);
+          const unwrappedInitializer = unwrapExpression(
+            current.initializer as ts.Expression,
+          ) as ts.Expression;
 
-          if (symbol) {
-            const caller = getCalleeNode(symbol);
+          if (
+            ts.isArrowFunction(unwrappedInitializer) ||
+            ts.isFunctionExpression(unwrappedInitializer)
+          ) {
+            const symbol = checker.getSymbolAtLocation(current.name);
 
-            if (caller) {
-              return caller;
+            if (symbol) {
+              const caller = getCalleeNode(symbol);
+
+              if (caller) {
+                return caller;
+              }
             }
-          }
 
-          const byDeclaration = getCallerByDeclaration(current);
+            const byDeclaration = getCallerByDeclaration(current);
 
-          if (byDeclaration) {
-            return byDeclaration;
+            if (byDeclaration) {
+              return byDeclaration;
+            }
           }
         } else if (
           ts.isPropertyAssignment(current) &&
