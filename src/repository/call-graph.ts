@@ -699,7 +699,10 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
         let symbol: ts.Symbol | undefined;
 
         if (ts.isComputedPropertyName(node.name)) {
-          const expression = node.name.expression;
+          const rawExpression = node.name.expression;
+          const expression = unwrapExpression(
+            rawExpression as ts.Expression,
+          ) as ts.Expression;
 
           if (
             ts.isStringLiteral(expression) ||
@@ -747,7 +750,10 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           let symbolName: string;
 
           if (ts.isComputedPropertyName(node.name)) {
-            const expression = node.name.expression;
+            const rawExpression = node.name.expression;
+            const expression = unwrapExpression(
+              rawExpression as ts.Expression,
+            ) as ts.Expression;
 
             if (
               ts.isStringLiteral(expression) ||
@@ -846,7 +852,10 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
       node: ts.PropertyAssignment,
     ): ts.Symbol | undefined {
       if (ts.isComputedPropertyName(node.name)) {
-        const expression = node.name.expression;
+        const rawExpression = node.name.expression;
+        const expression = unwrapExpression(
+          rawExpression as ts.Expression,
+        ) as ts.Expression;
 
         if (
           ts.isStringLiteral(expression) ||
