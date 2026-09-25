@@ -775,61 +775,17 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
           ts.isStringLiteral(node.name) ||
           ts.isNumericLiteral(node.name) ||
           ts.isComputedPropertyName(node.name)) &&
-        (ts.isArrowFunction(node.initializer) ||
-          ts.isFunctionExpression(node.initializer))
+        node.initializer
       ) {
-        let symbol: ts.Symbol | undefined;
+        const unwrappedInitializer = unwrapExpression(
+          node.initializer as ts.Expression,
+        ) as ts.Expression;
 
-        if (ts.isComputedPropertyName(node.name)) {
-          const rawExpression = node.name.expression;
-          const expression = unwrapExpression(
-            rawExpression as ts.Expression,
-          ) as ts.Expression;
-
-          if (
-            ts.isStringLiteral(expression) ||
-            ts.isNumericLiteral(expression) ||
-            ts.isNoSubstitutionTemplateLiteral(expression) ||
-            ts.isTemplateExpression(expression) ||
-            ts.isIdentifier(expression)
-          ) {
-            const objectLiteral = node.parent;
-
-            if (ts.isObjectLiteralExpression(objectLiteral)) {
-              const objectType = checker.getTypeAtLocation(objectLiteral);
-
-              if (
-                ts.isIdentifier(expression) ||
-                ts.isTemplateExpression(expression)
-              ) {
-                const expressionType = checker.getTypeAtLocation(expression);
-
-                if (
-                  expressionType.isStringLiteral() ||
-                  expressionType.isNumberLiteral()
-                ) {
-                  symbol = checker.getPropertyOfType(
-                    objectType,
-                    expressionType.value.toString(),
-                  );
-                }
-              } else {
-                symbol = checker.getPropertyOfType(objectType, expression.text);
-              }
-            }
-          }
-        } else {
-          symbol = checker.getSymbolAtLocation(node.name);
-        }
-
-        if (symbol) {
-          const resolved = resolveSymbol(symbol);
-
-          const { line } = sourceFile.getLineAndCharacterOfPosition(
-            node.name.getStart(sourceFile),
-          );
-
-          let symbolName: string;
+        if (
+          ts.isArrowFunction(unwrappedInitializer) ||
+          ts.isFunctionExpression(unwrappedInitializer)
+        ) {
+          let symbol: ts.Symbol | undefined;
 
           if (ts.isComputedPropertyName(node.name)) {
             const rawExpression = node.name.expression;
@@ -840,43 +796,95 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
             if (
               ts.isStringLiteral(expression) ||
               ts.isNumericLiteral(expression) ||
-              ts.isNoSubstitutionTemplateLiteral(expression)
+              ts.isNoSubstitutionTemplateLiteral(expression) ||
+              ts.isTemplateExpression(expression) ||
+              ts.isIdentifier(expression)
             ) {
-              symbolName = expression.text;
-            } else if (ts.isTemplateExpression(expression)) {
-              const expressionType = checker.getTypeAtLocation(expression);
+              const objectLiteral = node.parent;
 
-              if (
-                expressionType.isStringLiteral() ||
-                expressionType.isNumberLiteral()
-              ) {
-                symbolName = expressionType.value.toString();
-              } else {
-                symbolName = expression.getText(sourceFile);
+              if (ts.isObjectLiteralExpression(objectLiteral)) {
+                const objectType = checker.getTypeAtLocation(objectLiteral);
+
+                if (
+                  ts.isIdentifier(expression) ||
+                  ts.isTemplateExpression(expression)
+                ) {
+                  const expressionType = checker.getTypeAtLocation(expression);
+
+                  if (
+                    expressionType.isStringLiteral() ||
+                    expressionType.isNumberLiteral()
+                  ) {
+                    symbol = checker.getPropertyOfType(
+                      objectType,
+                      expressionType.value.toString(),
+                    );
+                  }
+                } else {
+                  symbol = checker.getPropertyOfType(objectType, expression.text);
+                }
               }
-            } else if (ts.isIdentifier(expression)) {
-              const expressionType = checker.getTypeAtLocation(expression);
+            }
+          } else {
+            symbol = checker.getSymbolAtLocation(node.name);
+          }
+
+          if (symbol) {
+            const resolved = resolveSymbol(symbol);
+
+            const { line } = sourceFile.getLineAndCharacterOfPosition(
+              node.name.getStart(sourceFile),
+            );
+
+            let symbolName: string;
+
+            if (ts.isComputedPropertyName(node.name)) {
+              const rawExpression = node.name.expression;
+              const expression = unwrapExpression(
+                rawExpression as ts.Expression,
+              ) as ts.Expression;
 
               if (
-                expressionType.isStringLiteral() ||
-                expressionType.isNumberLiteral()
+                ts.isStringLiteral(expression) ||
+                ts.isNumericLiteral(expression) ||
+                ts.isNoSubstitutionTemplateLiteral(expression)
               ) {
-                symbolName = expressionType.value.toString();
+                symbolName = expression.text;
+              } else if (ts.isTemplateExpression(expression)) {
+                const expressionType = checker.getTypeAtLocation(expression);
+
+                if (
+                  expressionType.isStringLiteral() ||
+                  expressionType.isNumberLiteral()
+                ) {
+                  symbolName = expressionType.value.toString();
+                } else {
+                  symbolName = expression.getText(sourceFile);
+                }
+              } else if (ts.isIdentifier(expression)) {
+                const expressionType = checker.getTypeAtLocation(expression);
+
+                if (
+                  expressionType.isStringLiteral() ||
+                  expressionType.isNumberLiteral()
+                ) {
+                  symbolName = expressionType.value.toString();
+                } else {
+                  symbolName = expression.getText(sourceFile);
+                }
               } else {
                 symbolName = expression.getText(sourceFile);
               }
             } else {
-              symbolName = expression.getText(sourceFile);
+              symbolName = node.name.text;
             }
-          } else {
-            symbolName = node.name.text;
-          }
 
-          functionSymbols.set(resolved, {
-            symbolName,
-            filePath,
-            line: line + 1,
-          });
+            functionSymbols.set(resolved, {
+              symbolName,
+              filePath,
+              line: line + 1,
+            });
+          }
         }
       }
 
@@ -1163,23 +1171,31 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
             ts.isStringLiteral(current.name) ||
             ts.isNumericLiteral(current.name) ||
             ts.isComputedPropertyName(current.name)) &&
-          (ts.isArrowFunction(current.initializer) ||
-            ts.isFunctionExpression(current.initializer))
+          current.initializer
         ) {
-          const symbol = getPropertyAssignmentCallerSymbol(current);
+          const unwrappedInitializer = unwrapExpression(
+            current.initializer as ts.Expression,
+          ) as ts.Expression;
 
-          if (symbol) {
-            const caller = getCalleeNode(symbol);
+          if (
+            ts.isArrowFunction(unwrappedInitializer) ||
+            ts.isFunctionExpression(unwrappedInitializer)
+          ) {
+            const symbol = getPropertyAssignmentCallerSymbol(current);
 
-            if (caller) {
-              return caller;
+            if (symbol) {
+              const caller = getCalleeNode(symbol);
+
+              if (caller) {
+                return caller;
+              }
             }
-          }
 
-          const byDeclaration = getCallerByDeclaration(current);
+            const byDeclaration = getCallerByDeclaration(current);
 
-          if (byDeclaration) {
-            return byDeclaration;
+            if (byDeclaration) {
+              return byDeclaration;
+            }
           }
         }
 
