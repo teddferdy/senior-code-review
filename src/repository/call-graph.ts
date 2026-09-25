@@ -1287,7 +1287,9 @@ export function buildCallGraph(sources: Record<string, string>): CallGraph {
             ts.isPropertyAccessExpression(calleeExpression) ||
             ts.isElementAccessExpression(calleeExpression)
           ) {
-            const receiverExpression = calleeExpression.expression;
+            const receiverExpression = unwrapExpression(
+              calleeExpression.expression,
+            );
 
             /*
              * Preserve Phase 6.4 interface/concrete
