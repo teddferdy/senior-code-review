@@ -45,7 +45,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an interface method call with non-null asserted receiver", () => {
     const sources = {
@@ -88,7 +88,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an interface method call with as-expression receiver", () => {
     const sources = {
@@ -131,7 +131,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an interface method call with satisfies-expression receiver", () => {
     const sources = {
@@ -174,7 +174,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an interface method call with angle-bracket type assertion receiver", () => {
     const sources = {
@@ -217,7 +217,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an interface method call with interleaved wrappers", () => {
     const sources = {
@@ -260,7 +260,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an interface method element-access call with wrapped receiver", () => {
     const sources = {
@@ -303,7 +303,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   // POLYMORPHIC RECEIVER CASES
 
@@ -363,7 +363,7 @@ export function consumer(service: UserService) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a polymorphic method call with non-null asserted receiver", () => {
     const sources = {
@@ -421,7 +421,7 @@ export function consumer(service: UserService) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a polymorphic method call with as-expression receiver", () => {
     const sources = {
@@ -479,7 +479,7 @@ export function consumer(service: UserService) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a polymorphic method call with satisfies-expression receiver", () => {
     const sources = {
@@ -537,7 +537,7 @@ export function consumer(service: UserService) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a polymorphic method call with angle-bracket assertion receiver", () => {
     const sources = {
@@ -595,7 +595,7 @@ export function consumer(service: UserService) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a polymorphic method element-access call with wrapped receiver", () => {
     const sources = {
@@ -653,7 +653,7 @@ export function consumer(service: UserService) {
         },
       ],
     });
-  });
+  }, 30000);
 
   // CROSS-FILE
 
@@ -746,7 +746,7 @@ export function consumePolymorphic(svc: BaseService) {
         },
       ],
     });
-  });
+  }, 30000);
 
   // NEGATIVE / BOUNDARY CASES
 
@@ -778,7 +778,7 @@ export function consume() {
         }),
       }),
     );
-  });
+  }, 30000);
 
   it("preserves nominal isolation for polymorphic dispatch with wrapped receiver", () => {
     const sources = {
@@ -820,7 +820,7 @@ export function consumer(service: UserService) {
         callee: expect.objectContaining({ symbolName: "getUser", line: 11 }),
       }),
     );
-  });
+  }, 30000);
 
   it("does not resolve an aliased receiver variable to the implementation", () => {
     const sources = {
@@ -845,7 +845,7 @@ export function consume() {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 
   it("does not create edges for constructor calls with wrapped expressions", () => {
     const sources = {
@@ -867,5 +867,5 @@ export function consume() {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 });

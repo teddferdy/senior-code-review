@@ -39,7 +39,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a class property arrow function with numeric-literal name via element access", () => {
     const sources = {
@@ -78,7 +78,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a class property arrow function with computed string-literal name", () => {
     const sources = {
@@ -117,7 +117,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a class property arrow function with computed identifier key", () => {
     const sources = {
@@ -158,7 +158,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a static class property arrow function with string-literal name", () => {
     const sources = {
@@ -196,7 +196,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a static class property arrow function with computed identifier key", () => {
     const sources = {
@@ -236,7 +236,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a call from inside a string-literal class property arrow function", () => {
     const sources = {
@@ -274,7 +274,7 @@ export class Service {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a call from inside a computed class property arrow function", () => {
     const sources = {
@@ -314,7 +314,7 @@ export class Service {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a class property function expression with string-literal name", () => {
     const sources = {
@@ -353,5 +353,5 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 });

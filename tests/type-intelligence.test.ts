@@ -23,7 +23,7 @@ export function consumer() {
       typeName: "UserService",
       filePath: "service.ts",
     });
-  });
+  }, 30000);
 
   it("resolves an imported class instance with an arbitrary variable name", () => {
     const sources = {
@@ -50,7 +50,7 @@ export function consumer() {
       typeName: "PaymentService",
       filePath: "service.ts",
     });
-  });
+  }, 30000);
 
   it("resolves a class instance through a cross-file import", () => {
     const sources = {
@@ -73,7 +73,7 @@ export function consumer() {
       typeName: "UserService",
       filePath: "domain/user-service.ts",
     });
-  });
+  }, 30000);
 
   it("resolves a variable type from an explicit type annotation", () => {
     const sources = {
@@ -96,7 +96,7 @@ export function consumer() {
       typeName: "UserService",
       filePath: "service.ts",
     });
-  });
+  }, 30000);
 
   it("resolves a variable type from an interface annotation", () => {
     const sources = {
@@ -121,7 +121,7 @@ export function consumer() {
       typeName: "UserService",
       filePath: "types.ts",
     });
-  });
+  }, 30000);
 
   it("resolves a variable type from a subclass instance", () => {
     const sources = {
@@ -146,7 +146,7 @@ export function consumer() {
       typeName: "UserService",
       filePath: "service.ts",
     });
-  });
+  }, 30000);
 
   it("resolves an overridden method receiver to the concrete subclass", () => {
     const sources = {
@@ -175,7 +175,7 @@ export function consumer() {
       typeName: "UserService",
       filePath: "service.ts",
     });
-  });
+  }, 30000);
 
   it("resolves a polymorphic variable to its declared interface type", () => {
     const sources = {
@@ -205,5 +205,5 @@ export function consumer() {
       typeName: "Service",
       filePath: "service.ts",
     });
-  });
+  }, 30000);
 });

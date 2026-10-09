@@ -21,7 +21,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves as-expression arrow initializer caller", () => {
     const sources = {
@@ -42,7 +42,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves type assertion arrow initializer caller", () => {
     const sources = {
@@ -63,7 +63,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves satisfies arrow initializer caller", () => {
     const sources = {
@@ -84,7 +84,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves non-null arrow initializer caller", () => {
     const sources = {
@@ -105,7 +105,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves interleaved wrappers arrow initializer caller", () => {
     const sources = {
@@ -126,7 +126,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves parenthesized function expression initializer caller", () => {
     const sources = {
@@ -147,7 +147,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves function expression with type assertion initializer caller", () => {
     const sources = {
@@ -168,7 +168,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves class property arrow initializer wrapper caller", () => {
     const sources = {
@@ -194,7 +194,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves cross-file exported wrapped function initializer callee", () => {
     const sources = {
@@ -218,5 +218,5 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 });

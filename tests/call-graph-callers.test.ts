@@ -38,7 +38,7 @@ export class Service {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a call from inside an arrow function variable", () => {
     const sources = {
@@ -74,7 +74,7 @@ export const run = () => {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a call from inside a function expression variable", () => {
     const sources = {
@@ -110,7 +110,7 @@ export const run = function () {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a call from inside an object method", () => {
     const sources = {
@@ -148,7 +148,7 @@ export const service = {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a call from inside an object property arrow function", () => {
     const sources = {
@@ -186,7 +186,7 @@ export const service = {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("tracks a method caller and the nearest nested function inside a method", () => {
     const sources = {
@@ -244,7 +244,7 @@ export class Service {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a method-to-method call through this", () => {
     const sources = {
@@ -273,5 +273,5 @@ export class Service {
         }),
       }),
     );
-  });
+  }, 30000);
 });

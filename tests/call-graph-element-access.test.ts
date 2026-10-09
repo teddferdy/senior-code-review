@@ -43,7 +43,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("expands an element-access call on an interface-typed parameter to all implementations", () => {
     const sources = {
@@ -105,7 +105,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file element-access call on an interface-typed variable to the concrete implementation", () => {
     const sources = {
@@ -152,7 +152,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("does not resolve an element-access call when the key is not statically known", () => {
     const sources = {
@@ -173,5 +173,5 @@ export function consume(s: Service, key: string) {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 });

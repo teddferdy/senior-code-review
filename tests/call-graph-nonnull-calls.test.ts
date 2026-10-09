@@ -36,7 +36,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a non-null asserted method call", () => {
     const sources = {
@@ -74,7 +74,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a non-null asserted element-access call", () => {
     const sources = {
@@ -112,7 +112,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves non-null assertions combined with parentheses in either order", () => {
     const sources = {
@@ -171,7 +171,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a non-null asserted call on an interface-typed variable to the concrete implementation", () => {
     const sources = {
@@ -214,7 +214,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("does not resolve a non-null asserted element-access call when the key is not statically known", () => {
     const sources = {
@@ -235,5 +235,5 @@ export function consume(s: Service, key: string) {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 });

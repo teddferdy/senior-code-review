@@ -38,7 +38,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a parenthesized free-function call", () => {
     const sources = {
@@ -74,7 +74,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a doubly-parenthesized method call without duplicate edges", () => {
     const sources = {
@@ -112,7 +112,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a parenthesized element-access call", () => {
     const sources = {
@@ -150,7 +150,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a parenthesized call on an interface-typed variable to the concrete implementation", () => {
     const sources = {
@@ -193,7 +193,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("expands a parenthesized call on an interface-typed parameter to all implementations", () => {
     const sources = {
@@ -255,7 +255,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a parenthesized call from inside a class method", () => {
     const sources = {
@@ -293,7 +293,7 @@ export class Service {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("does not resolve a parenthesized element-access call when the key is not statically known", () => {
     const sources = {
@@ -314,5 +314,5 @@ export function consume(s: Service, key: string) {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 });

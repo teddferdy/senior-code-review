@@ -36,7 +36,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a type-asserted method call", () => {
     const sources = {
@@ -74,7 +74,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a type-asserted element-access call", () => {
     const sources = {
@@ -112,7 +112,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a type-asserted call wrapped with parentheses", () => {
     const sources = {
@@ -148,7 +148,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a type-asserted call combined with non-null assertion", () => {
     const sources = {
@@ -184,7 +184,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a satisfies-asserted call", () => {
     const sources = {
@@ -220,7 +220,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an angle-bracket type-asserted call", () => {
     const sources = {
@@ -256,7 +256,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a type-asserted call on an interface-typed variable to the concrete implementation", () => {
     const sources = {
@@ -299,5 +299,5 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 });

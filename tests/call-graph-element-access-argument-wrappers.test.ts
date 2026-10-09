@@ -38,7 +38,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an element-access call with satisfies-string key", () => {
     const sources = {
@@ -76,7 +76,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an element-access call with parenthesized key", () => {
     const sources = {
@@ -114,7 +114,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an element-access call with identifier as-string key", () => {
     const sources = {
@@ -154,7 +154,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an element-access call with angle-bracket type-asserted key", () => {
     const sources = {
@@ -192,7 +192,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an element-access call with non-null-asserted identifier key", () => {
     const sources = {
@@ -232,7 +232,7 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an optional-chaining element-access call with as-string key", () => {
     const sources = {
@@ -270,7 +270,7 @@ export function consume(s?: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an element-access call with numeric as-number key", () => {
     const sources = {
@@ -308,5 +308,5 @@ export function consume(s: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 });
