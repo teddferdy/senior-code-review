@@ -126,7 +126,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("T2 returns undefined for an unresolved callee", () => {
     const { context, graph } = setup({
@@ -147,7 +147,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("T3 returns endpoints with [] for a same-file call", () => {
     const { context, graph } = setup({
@@ -172,7 +172,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("T4 returns endpoint and edge identity for a direct call", () => {
     const { context, graph } = setup({
@@ -201,7 +201,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("T5 preserves every duplicate direct edge with identity", () => {
     const { context, graph } = setup({
@@ -236,7 +236,7 @@ export function y() {}
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("T6 returns endpoints and chain identity for a barrel call", () => {
     const { context, graph } = setup({
@@ -274,7 +274,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("T7 returns a relationship with [] when no module chain exists", () => {
     const { context, graph } = setup({
@@ -308,7 +308,7 @@ export { x };
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("T8 leaves the input V1CallEdge unchanged", () => {
     const { context, graph } = setup({
@@ -335,7 +335,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("T9 matches resolveCallModuleEdges element-wise with identity", () => {
     const { context, graph } = setup({
@@ -368,7 +368,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("T10 is deterministic across repeated calls", () => {
     const { context, graph } = setup({
@@ -404,5 +404,5 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 });

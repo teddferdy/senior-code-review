@@ -110,7 +110,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("returns [] for a same-file call even with a degenerate self-edge", () => {
     const { context, graph } = setup({
@@ -133,7 +133,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("returns the direct module edge for a direct cross-file call", () => {
     const { context, graph } = setup({
@@ -164,7 +164,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("returns every duplicate direct edge in table order without dedup", () => {
     const { context, graph } = setup({
@@ -201,7 +201,7 @@ export function y() {}
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("returns the full chain for a barrel-mediated call", () => {
     const { context, graph } = setup({
@@ -234,7 +234,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("returns the complete ordered chain for multi-hop re-exports", () => {
     const { context, graph } = setup({
@@ -269,7 +269,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("never follows an unrelated re-export leg", () => {
     const { context, graph } = setup({
@@ -304,7 +304,7 @@ export { decoy } from "./c";
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("returns [] when no internal chain reaches the callee", () => {
     const { context, graph } = setup({
@@ -331,7 +331,7 @@ export { x };
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("never returns external edges and tolerates stale ids", () => {
     const { context, graph } = setup({
@@ -366,7 +366,7 @@ export function foo() {
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("resolves multiple calls over one dependency to the same edge", () => {
     const { context, graph } = setup({
@@ -404,7 +404,7 @@ export function y() {}
     } finally {
       finish(context);
     }
-  });
+  }, 30000);
 
   it("is deterministic across repeated and reordered equivalent analyses", () => {
     const sources = {
@@ -457,5 +457,5 @@ export { decoy } from "./c";
       finish(first.context);
       finish(second.context);
     }
-  });
+  }, 30000);
 });

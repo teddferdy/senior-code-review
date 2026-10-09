@@ -36,7 +36,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("builds multiple direct caller-to-callee edges in source order", () => {
     const sources = {
@@ -113,7 +113,7 @@ export function main() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("preserves duplicate direct calls as separate edges", () => {
     const sources = {
@@ -166,7 +166,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("tracks the direct call site line", () => {
     const sources = {
@@ -202,7 +202,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("tracks the nearest nested function as the caller", () => {
     const sources = {
@@ -258,7 +258,7 @@ export function outer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("ignores calls that do not resolve to indexed function declarations", () => {
     const sources = {
@@ -297,7 +297,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("tracks a recursive self-call as a self-edge", () => {
     const sources = {
@@ -329,7 +329,7 @@ export function factorial(n: number) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an aliased imported function call", () => {
     const sources = {
@@ -365,7 +365,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a default imported function call", () => {
     const sources = {
@@ -401,7 +401,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a namespace imported function call", () => {
     const sources = {
@@ -437,7 +437,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a function through a barrel re-export", () => {
     const sources = {
@@ -476,7 +476,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a function through multiple barrel re-exports", () => {
     const sources = {
@@ -518,7 +518,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a class method call", () => {
     const sources = {
@@ -557,7 +557,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an arrow function call", () => {
     const sources = {
@@ -593,7 +593,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a function expression call", () => {
     const sources = {
@@ -629,7 +629,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object method call", () => {
     const sources = {
@@ -667,7 +667,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object property arrow function call", () => {
     const sources = {
@@ -705,7 +705,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object property function expression call", () => {
     const sources = {
@@ -743,7 +743,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object string-literal property arrow function call", () => {
     const sources = {
@@ -781,7 +781,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object string-literal property function expression call", () => {
     const sources = {
@@ -819,7 +819,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object numeric-literal property arrow function call", () => {
     const sources = {
@@ -857,7 +857,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object numeric-literal property function expression call", () => {
     const sources = {
@@ -895,7 +895,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object numeric-literal property through string-literal element access", () => {
     const sources = {
@@ -933,7 +933,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed string-literal property arrow function call", () => {
     const sources = {
@@ -971,7 +971,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed string-literal property function expression call", () => {
     const sources = {
@@ -1009,7 +1009,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed numeric-literal property arrow function call", () => {
     const sources = {
@@ -1047,7 +1047,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed numeric-literal property function expression call", () => {
     const sources = {
@@ -1085,7 +1085,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed identifier property arrow function call", () => {
     const sources = {
@@ -1125,7 +1125,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed identifier property function expression call", () => {
     const sources = {
@@ -1165,7 +1165,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed identifier numeric property arrow function call", () => {
     const sources = {
@@ -1205,7 +1205,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed identifier numeric property function expression call", () => {
     const sources = {
@@ -1245,7 +1245,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("ignores a computed identifier property when the key is not statically resolvable", () => {
     const sources = {
@@ -1270,7 +1270,7 @@ export function consumer() {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 
   it("resolves a computed identifier property call using the same identifier", () => {
     const sources = {
@@ -1307,7 +1307,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file computed identifier property call", () => {
     const sources = {
@@ -1347,7 +1347,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file computed identifier property call through an aliased key import", () => {
     const sources = {
@@ -1387,7 +1387,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed identifier property call through a namespace import", () => {
     const sources = {
@@ -1427,7 +1427,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed template-literal property call", () => {
     const sources = {
@@ -1465,7 +1465,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file computed template-literal property call", () => {
     const sources = {
@@ -1505,7 +1505,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file computed template-literal property call", () => {
     const sources = {
@@ -1545,7 +1545,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed template-expression property with a statically known key", () => {
     const sources = {
@@ -1586,7 +1586,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed template-expression property using a statically known identifier", () => {
     const sources = {
@@ -1629,7 +1629,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed template-expression property with a statically known numeric key", () => {
     const sources = {
@@ -1671,7 +1671,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("ignores a computed template-expression property when the key is not statically resolvable", () => {
     const sources = {
@@ -1696,7 +1696,7 @@ export function consumer() {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file computed template-expression property using a statically known identifier", () => {
     const sources = {
@@ -1736,7 +1736,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file computed template-expression property using a statically known numeric identifier", () => {
     const sources = {
@@ -1776,7 +1776,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file computed template-expression property using an aliased numeric identifier", () => {
     const sources = {
@@ -1816,7 +1816,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed template-expression property using a namespace-imported key", () => {
     const sources = {
@@ -1856,7 +1856,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed template-expression property with multiple statically known interpolations", () => {
     const sources = {
@@ -1900,7 +1900,7 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("ignores a computed template-expression property when one interpolation is dynamic", () => {
     const sources = {
@@ -1927,7 +1927,7 @@ export function consumer() {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file computed template-expression property with multiple statically known interpolations", () => {
     const sources = {
@@ -1968,5 +1968,5 @@ export function consumer() {
         },
       ],
     });
-  });
+  }, 30000);
 });

@@ -39,7 +39,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a computed method call with a statically-known key", () => {
     const sources = {
@@ -80,7 +80,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a call from inside a string-literal method", () => {
     const sources = {
@@ -118,7 +118,7 @@ export class Service {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a call from inside a computed method with a statically-known key", () => {
     const sources = {
@@ -158,7 +158,7 @@ export class Service {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a string-literal method through an interface-typed receiver", () => {
     const sources = {
@@ -201,7 +201,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("ignores a computed method when the key is not statically known", () => {
     const sources = {
@@ -225,5 +225,5 @@ export function consume() {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 });

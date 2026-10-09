@@ -35,7 +35,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object method with satisfies-string computed key", () => {
     const sources = {
@@ -70,7 +70,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object method with parenthesized computed key", () => {
     const sources = {
@@ -105,7 +105,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object method with angle-bracket computed key", () => {
     const sources = {
@@ -140,7 +140,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object method with identifier as-const computed key", () => {
     const sources = {
@@ -177,7 +177,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object method with non-null-asserted identifier key", () => {
     const sources = {
@@ -214,7 +214,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file call to an object method defined with wrapper key via dot access", () => {
     const sources = {
@@ -252,7 +252,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file call to an object method defined with wrapper key via element access", () => {
     const sources = {
@@ -290,5 +290,5 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 });

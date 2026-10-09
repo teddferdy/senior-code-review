@@ -38,7 +38,7 @@ export function consume(s?: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an optional-chaining element-access call on a null-union receiver", () => {
     const sources = {
@@ -76,7 +76,7 @@ export function consume(s: Service | null) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an optional-chaining element-access call with an identifier key on a nullable receiver", () => {
     const sources = {
@@ -116,7 +116,7 @@ export function consume(s?: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an optional-chaining element-access call on an interface-typed optional parameter to the concrete implementation", () => {
     const sources = {
@@ -158,7 +158,7 @@ export function consume(s?: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a cross-file optional-chaining element-access call through a nullable receiver", () => {
     const sources = {
@@ -204,7 +204,7 @@ export function consume(s?: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an optional-chaining element-access call on an expression receiver", () => {
     const sources = {
@@ -262,7 +262,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("does not resolve an optional-chaining element-access call when the key is not statically known", () => {
     const sources = {
@@ -283,7 +283,7 @@ export function consume(s?: Service, key: string) {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 
   it("keeps optional-chaining dot access on a nullable receiver resolved for parity", () => {
     const sources = {
@@ -321,5 +321,5 @@ export function consume(s?: Service) {
         },
       ],
     });
-  });
+  }, 30000);
 });

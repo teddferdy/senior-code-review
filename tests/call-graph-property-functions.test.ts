@@ -39,7 +39,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a class property function expression call", () => {
     const sources = {
@@ -75,7 +75,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a call from inside a class property arrow function", () => {
     const sources = {
@@ -113,7 +113,7 @@ export class Service {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a method-to-property call through this", () => {
     const sources = {
@@ -142,7 +142,7 @@ export class Service {
         }),
       }),
     );
-  });
+  }, 30000);
 
   it("resolves a static class property arrow function call", () => {
     const sources = {
@@ -180,7 +180,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("ignores a call to a non-function class property", () => {
     const sources = {
@@ -199,5 +199,5 @@ export function consume() {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 });

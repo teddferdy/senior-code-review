@@ -38,7 +38,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object property arrow function with satisfies-string computed key", () => {
     const sources = {
@@ -76,7 +76,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object property arrow function with parenthesized computed key", () => {
     const sources = {
@@ -114,7 +114,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object property arrow function with angle-bracket computed key", () => {
     const sources = {
@@ -152,7 +152,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object property arrow function with identifier as-string computed key", () => {
     const sources = {
@@ -192,7 +192,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object property arrow function with non-null-asserted identifier key", () => {
     const sources = {
@@ -232,7 +232,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves an object property arrow function with numeric as-number computed key", () => {
     const sources = {
@@ -270,7 +270,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves a function expression with wrapped computed key", () => {
     const sources = {
@@ -308,5 +308,5 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 });

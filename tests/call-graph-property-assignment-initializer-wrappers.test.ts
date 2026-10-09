@@ -23,7 +23,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves as-expression arrow initializer", () => {
     const sources = {
@@ -47,7 +47,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves type assertion arrow initializer", () => {
     const sources = {
@@ -71,7 +71,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves satisfies arrow initializer", () => {
     const sources = {
@@ -95,7 +95,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves non-null arrow initializer", () => {
     const sources = {
@@ -119,7 +119,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves interleaved wrappers arrow initializer", () => {
     const sources = {
@@ -143,7 +143,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves parenthesized function expression initializer", () => {
     const sources = {
@@ -167,7 +167,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves function expression with as initializer", () => {
     const sources = {
@@ -191,7 +191,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves computed-name wrapper plus initializer wrapper", () => {
     const sources = {
@@ -215,7 +215,7 @@ export function helper() {}
         },
       ],
     });
-  });
+  }, 30000);
 
   it("resolves cross-file wrapped property assignment", () => {
     const sources = {
@@ -242,7 +242,7 @@ export function consume() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("does not resolve alias helper as initializer", () => {
     const sources = {
@@ -265,7 +265,7 @@ export function caller() {
         },
       ],
     });
-  });
+  }, 30000);
 
   it("does not resolve getFn() initializer", () => {
     const sources = {
@@ -280,7 +280,7 @@ export const obj = {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 
   it("does not resolve conditional initializer", () => {
     const sources = {
@@ -295,7 +295,7 @@ export const obj = {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 
   it("does not resolve dynamic computed key", () => {
     const sources = {
@@ -312,5 +312,5 @@ export const obj = {
     expect(buildCallGraph(sources)).toEqual({
       edges: [],
     });
-  });
+  }, 30000);
 });

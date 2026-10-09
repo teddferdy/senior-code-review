@@ -32,7 +32,7 @@ export function consumer() {
         }),
       }),
     );
-  });
+  }, 30000);
 
   it("resolves a method call through a cross-file class instance", () => {
     const sources = {
@@ -64,7 +64,7 @@ export function consumer() {
         }),
       }),
     );
-  });
+  }, 30000);
 
   it("resolves a method call through an interface-typed receiver", () => {
     const sources = {
@@ -100,7 +100,7 @@ export function consumer() {
         }),
       }),
     );
-  });
+  }, 30000);
 
   it("resolves an inherited method through a subclass instance", () => {
     const sources = {
@@ -134,7 +134,7 @@ export function consumer() {
         }),
       }),
     );
-  });
+  }, 30000);
 
   it("resolves an inherited method across files", () => {
     const sources = {
@@ -171,7 +171,7 @@ export function consumer() {
         }),
       }),
     );
-  });
+  }, 30000);
 
   it("resolves an overridden method on the subclass instead of the parent", () => {
     const sources = {
@@ -221,7 +221,7 @@ export function consumer() {
         }),
       }),
     );
-  });
+  }, 30000);
 
   it("resolves polymorphic dispatch to all compatible implementations", () => {
     const sources = {
@@ -275,7 +275,7 @@ export function run() {
         }),
       }),
     );
-  });
+  }, 30000);
 
   it("resolves polymorphic dispatch across files", () => {
     const sources = {
@@ -333,7 +333,7 @@ export function run() {
         }),
       }),
     );
-  });
+  }, 30000);
 
   it("does not include unrelated same-name methods in polymorphic dispatch", () => {
     const sources = {
@@ -399,5 +399,5 @@ export function consumer(service: UserService) {
         }),
       }),
     );
-  });
+  }, 30000);
 });

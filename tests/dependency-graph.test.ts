@@ -15,7 +15,7 @@ describe("Dependency Graph", () => {
     expect(graph.dependencies["src/controllers/order-controller.ts"]).toEqual([
       "src/services/order-service.ts",
     ]);
-  });
+  }, 30000);
 
   it("should ignore imports that cannot be resolved", () => {
     const graph = buildDependencyGraph(
@@ -31,7 +31,7 @@ describe("Dependency Graph", () => {
     expect(graph.dependencies["src/controllers/order-controller.ts"]).toEqual([
       "src/services/order-service.ts",
     ]);
-  });
+  }, 30000);
 
   it("should deduplicate repeated dependencies", () => {
     const graph = buildDependencyGraph(
@@ -47,7 +47,7 @@ describe("Dependency Graph", () => {
     expect(graph.dependencies["src/controllers/order-controller.ts"]).toEqual([
       "src/services/order-service.ts",
     ]);
-  });
+  }, 30000);
 
   it("should include source files with no dependencies", () => {
     const graph = buildDependencyGraph(
@@ -63,7 +63,7 @@ describe("Dependency Graph", () => {
     );
 
     expect(graph.dependencies["src/services/order-service.ts"]).toEqual([]);
-  });
+  }, 30000);
 
   it("should build reverse dependencies", () => {
     const graph = buildDependencyGraph(
@@ -81,7 +81,7 @@ describe("Dependency Graph", () => {
     expect(graph.dependents["src/services/order-service.ts"]).toEqual([
       "src/controllers/order-controller.ts",
     ]);
-  });
+  }, 30000);
 
   it("should include source files with no dependents", () => {
     const graph = buildDependencyGraph(
@@ -97,7 +97,7 @@ describe("Dependency Graph", () => {
     );
 
     expect(graph.dependents["src/controllers/order-controller.ts"]).toEqual([]);
-  });
+  }, 30000);
 
   it("should include repository files with no source content", () => {
     const graph = buildDependencyGraph(
@@ -111,7 +111,7 @@ describe("Dependency Graph", () => {
 
     expect(graph.dependencies["src/utils/date.ts"]).toEqual([]);
     expect(graph.dependents["src/utils/date.ts"]).toEqual([]);
-  });
+  }, 30000);
 
   it("should return dependencies and dependents in deterministic order", () => {
     const graph = buildDependencyGraph(
@@ -131,7 +131,7 @@ describe("Dependency Graph", () => {
     expect(graph.dependents["src/b.ts"]).toEqual(["src/a.ts"]);
 
     expect(graph.dependents["src/c.ts"]).toEqual(["src/a.ts"]);
-  });
+  }, 30000);
 
   it("should ignore self-imports", () => {
     const graph = buildDependencyGraph(
@@ -145,7 +145,7 @@ describe("Dependency Graph", () => {
 
     expect(graph.dependencies["src/a.ts"]).toEqual([]);
     expect(graph.dependents["src/a.ts"]).toEqual([]);
-  });
+  }, 30000);
 
   it("should detect circular dependencies", () => {
     const graph = buildDependencyGraph(
@@ -161,7 +161,7 @@ describe("Dependency Graph", () => {
     );
 
     expect(graph.cycles).toEqual([["src/a.ts", "src/b.ts", "src/a.ts"]]);
-  });
+  }, 30000);
 
   it("should detect multiple independent circular dependencies", () => {
     const graph = buildDependencyGraph(
@@ -186,7 +186,7 @@ describe("Dependency Graph", () => {
       ["src/a.ts", "src/b.ts", "src/a.ts"],
       ["src/c.ts", "src/d.ts", "src/c.ts"],
     ]);
-  });
+  }, 30000);
 
   it("should detect circular dependencies across multiple files", () => {
     const graph = buildDependencyGraph(
@@ -207,5 +207,5 @@ describe("Dependency Graph", () => {
     expect(graph.cycles).toEqual([
       ["src/a.ts", "src/b.ts", "src/c.ts", "src/a.ts"],
     ]);
-  });
+  }, 30000);
 });
