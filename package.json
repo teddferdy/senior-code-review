@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "bin": {
     "senior-code-reviewer": "dist/cli.js"
   },
@@ -15,8 +18,7 @@
   },
   "dependencies": {
     "tsx": "^4",
-    "typescript": "^5",
-    "zod": "^4"
+    "typescript": "^5"
   },
   "devDependencies": {
     "@types/node": "^24",
