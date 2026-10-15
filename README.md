@@ -9,18 +9,22 @@ invention.
 
 ## 1. Installation / build
 
-Requires Node.js 20+ and TypeScript (see `package.json`).
+Private checkout-local package (`private: true`, not published — see
+§17). Requires Node.js 20+ and TypeScript (see `package.json`).
 
 ```sh
-npm install
+npm ci          # clean install from the tracked lockfile
 npm run build   # typecheck + emit to dist/
 npm test        # full suite (vitest)
 ```
 
 ## 2. API invocation
 
+Consumed from a local checkout of this private package (not installable
+from a registry — see §17). From the repository root:
+
 ```ts
-import { runV1Review } from "senior-code-reviewer";
+import { runV1Review } from "./src/index.js";
 
 const report = runV1Review("/path/to/repo", {
   enabledRules: ["REV-CYCLE-001"], // optional; default: all 19 rules
@@ -30,8 +34,10 @@ const report = runV1Review("/path/to/repo", {
 ```
 
 `runV1Review` is synchronous and directly testable without spawning a
-CLI. Related exports: `runV1ReviewWithEntries` (same behavior with an
-explicit registry; used as the controlled test seam),
+CLI. (Run TypeScript callers with the repo toolchain, e.g.
+`npx tsx script.ts`; the compiled equivalent is `./dist/index.js`
+after `npm run build`.) Related exports: `runV1ReviewWithEntries` (same
+behavior with an explicit registry; used as the controlled test seam),
 `getV1ReviewExitCode(report)`, `renderV1ReviewJson(report)`,
 `renderV1ReviewText(report)`, `V1_RULE_REGISTRY`, `loadV1Sources`.
 
@@ -39,11 +45,14 @@ explicit registry; used as the controlled test seam),
 
 ```sh
 node dist/cli.js <repositoryRoot>
-senior-code-reviewer [--format json|text] [--output <path>] [--rule <id>...] <repositoryRoot>
+node dist/cli.js [--format json|text] [--output <path>] [--rule <id>...] <repositoryRoot>
 ```
 
-(`senior-code-reviewer` is available as a `bin` entry after `npm run build`;
-it points at `dist/cli.js`.)
+(`dist/` is built output from `npm run build` and is not tracked. The
+`senior-code-reviewer` bin name (`bin` → `dist/cli.js`) only resolves
+if the package is linked or installed locally; because this package is
+private and unpublished, `node dist/cli.js` is the supported
+checkout-local invocation.)
 
 ## 4. CLI flags
 
