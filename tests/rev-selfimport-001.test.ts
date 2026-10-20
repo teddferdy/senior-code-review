@@ -898,11 +898,14 @@ describe("REV-SELFIMPORT-001 self-import review", () => {
     );
 
     it(
-      "38 uses resolved endpoints rather than the authored specifier when a sibling shadows the extensionless match",
+      "38 uses resolved endpoints rather than the authored specifier when an exact sibling shadows the same-basename source",
       () => {
+        // The former CSS fixture depended on arbitrary extension
+        // stripping. These imports now exercise exact-file precedence
+        // and extensionless source precedence.
         const { context, result } = evaluate(
           {
-            "src/a.css": ".a { color: red; }\n",
+            "src/a.js": "export const foo = 1;\n",
             "src/a.ts":
               'import "./a";\nimport "./a.js";\nexport const foo = 1;\n',
           },
@@ -911,16 +914,35 @@ describe("REV-SELFIMPORT-001 self-import review", () => {
 
         try {
           const edges = context.allModuleEdges();
+          const extensionless = edges.find(
+            (edge) => edge.rawSpecifier === "./a",
+          );
+          const explicit = edges.find(
+            (edge) => edge.rawSpecifier === "./a.js",
+          );
 
           expect(edges).toHaveLength(2);
-
-          for (const edge of edges) {
-            expect(edge.from).toBe("src/a.ts");
-            expect(edge.to).toBe("src/a.css");
-            expect(isRevSelfimport001Violation(edge)).toBe(false);
-          }
-
-          expect(result.violations).toEqual([]);
+          expect(extensionless).toMatchObject({
+            from: "src/a.ts",
+            to: "src/a.ts",
+          });
+          expect(explicit).toMatchObject({
+            from: "src/a.ts",
+            to: "src/a.js",
+          });
+          expect(
+            extensionless !== undefined &&
+              isRevSelfimport001Violation(extensionless),
+          ).toBe(true);
+          expect(
+            explicit !== undefined &&
+              isRevSelfimport001Violation(explicit),
+          ).toBe(false);
+          expect(result.violations).toHaveLength(1);
+          expect(result.violations[0]).toMatchObject({
+            source: "src/a.ts",
+            rawSpecifier: "./a",
+          });
         } finally {
           finish(context);
         }
