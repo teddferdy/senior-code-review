@@ -1,7 +1,8 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { parseCliArgs, runCli } from "../src/cli.js";
@@ -216,6 +217,141 @@ describe("V1 CLI execution", () => {
         expect(stdout).toBe(expected);
       } finally {
         removeRepo(dir);
+      }
+    },
+    120000,
+  );
+});
+
+interface SpawnOutcome {
+  readonly status: number;
+  readonly stdout: string;
+  readonly stderr: string;
+}
+
+function spawnCli(
+  entryPath: string,
+  repositoryRoot: string,
+  nodeArgs: readonly string[] = [],
+): SpawnOutcome {
+  try {
+    const stdout = execFileSync(
+      process.execPath,
+      [...nodeArgs, entryPath, repositoryRoot],
+      { encoding: "utf8" },
+    );
+
+    return { status: 0, stdout, stderr: "" };
+  } catch (error) {
+    const failure = error as {
+      status?: number;
+      stdout?: string | Buffer;
+      stderr?: string | Buffer;
+    };
+
+    return {
+      status: failure.status ?? -1,
+      stdout:
+        typeof failure.stdout === "string"
+          ? failure.stdout
+          : String(failure.stdout ?? ""),
+      stderr:
+        typeof failure.stderr === "string"
+          ? failure.stderr
+          : String(failure.stderr ?? ""),
+    };
+  }
+}
+
+describe("V1 CLI symlinked entry point", () => {
+  it(
+    "produces identical output and exit codes when invoked through a symlinked script path",
+    () => {
+      const cliPath = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+
+      if (!existsSync(cliPath)) {
+        throw new Error(
+          "dist/cli.js is missing. Run `npm run build` before the CLI symlink test.",
+        );
+      }
+
+      const cleanDir = makeRepo({});
+      const violationDir = makeRepo({ "src/a.ts": "export const a = 1;\n" });
+      const linkDir = mkdtempSync(join(tmpdir(), "v1-cli-link-"));
+      const linkPath = join(linkDir, "cli-link.js");
+
+      symlinkSync(cliPath, linkPath);
+
+      try {
+        for (const [repositoryRoot, expectedStatus] of [
+          [cleanDir, 0],
+          [violationDir, 1],
+        ] as const) {
+          const direct = spawnCli(cliPath, repositoryRoot);
+          const viaSymlink = spawnCli(linkPath, repositoryRoot);
+
+          expect(direct.status).toBe(expectedStatus);
+          expect(viaSymlink.status).toBe(expectedStatus);
+          expect(viaSymlink.stdout).toBe(direct.stdout);
+          expect(viaSymlink.stderr).toBe(direct.stderr);
+        }
+      } finally {
+        removeRepo(cleanDir);
+        removeRepo(violationDir);
+        removeRepo(linkDir);
+      }
+    },
+    120000,
+  );
+
+  it(
+    "matches direct invocation through a same-directory symlink, including with --preserve-symlinks-main",
+    () => {
+      const cliPath = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+
+      if (!existsSync(cliPath)) {
+        throw new Error(
+          "dist/cli.js is missing. Run `npm run build` before the CLI symlink test.",
+        );
+      }
+
+      const copyRoot = mkdtempSync(join(tmpdir(), "v1-cli-dist-copy-"));
+      const copyDir = join(copyRoot, "dist");
+
+      cpSync(dirname(cliPath), copyDir, { recursive: true });
+      symlinkSync(
+        fileURLToPath(new URL("../node_modules", import.meta.url)),
+        join(copyDir, "node_modules"),
+      );
+
+      const copyCliPath = join(copyDir, "cli.js");
+      const sameDirLinkPath = join(copyDir, "cli-link.js");
+
+      symlinkSync("cli.js", sameDirLinkPath);
+
+      const violationDir = makeRepo({ "src/a.ts": "export const a = 1;\n" });
+
+      try {
+        const direct = spawnCli(copyCliPath, violationDir);
+
+        expect(direct.status).toBe(1);
+
+        const viaDefaultSymlink = spawnCli(sameDirLinkPath, violationDir);
+
+        expect(viaDefaultSymlink.status).toBe(1);
+        expect(viaDefaultSymlink.stdout).toBe(direct.stdout);
+        expect(viaDefaultSymlink.stderr).toBe(direct.stderr);
+
+        const viaPreserveSymlinksMain = spawnCli(sameDirLinkPath, violationDir, [
+          "--preserve-symlinks-main",
+        ]);
+
+        expect(viaPreserveSymlinksMain.status).toBe(1);
+        expect(viaPreserveSymlinksMain.stdout).toBe(direct.stdout);
+        expect(viaPreserveSymlinksMain.stderr).toBe(direct.stderr);
+      } finally {
+        removeRepo(copyRoot);
+        removeRepo(violationDir);
       }
     },
     120000,

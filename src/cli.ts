@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 import { runV1Review } from "./review/runner.js";
 import {
   getV1ReviewExitCode,
@@ -229,9 +232,28 @@ function main(): void {
   process.exitCode = result.exitCode;
 }
 
-if (
-  typeof process.argv[1] === "string" &&
-  import.meta.url === new URL(`file://${process.argv[1]}`).href
-) {
+/*
+ * Entry-point detection (symlink-safe): the module path Node reports
+ * (`import.meta.url`) and the path the caller supplied
+ * (`process.argv[1]`) can disagree whenever symlinks are involved.
+ * Node resolves the main module to its real path by default but keeps
+ * the symlink path under `--preserve-symlinks-main`; resolving both
+ * sides with `realpathSync` makes the comparison invariant under both
+ * modes, so direct and symlinked invocations behave identically. An
+ * unresolvable entry path simply means "not the entry point".
+ */
+function isEntryPoint(): boolean {
+  if (typeof process.argv[1] !== "string") {
+    return false;
+  }
+
+  try {
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
+  } catch {
+    return false;
+  }
+}
+
+if (isEntryPoint()) {
   main();
 }
