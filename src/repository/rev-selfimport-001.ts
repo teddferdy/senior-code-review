@@ -22,12 +22,11 @@ import type { ModuleEdge } from "./module-edges.js";
  *   rawSpecifier comparison, no source-text heuristic, no AST re-parse,
  *   no TypeChecker query, no filesystem check.
  * - the predicate is deliberately NOT `rawSpecifier`-based. The authored
- *   specifier and the resolved identity can diverge: `resolveImport`
- *   strips the extension on both sides and returns the first match in
- *   sorted canonical-path order, so `src/a.ts` importing `"./a"` (or
- *   even `"./a.js"`) resolves to a sibling `src/a.css` when one is
- *   supplied. Such an edge resolves elsewhere and is correctly not
- *   reported.
+ *   specifier and the resolved identity can diverge: `src/a.ts`
+ *   importing `"./a.js"` resolves to an exact sibling `src/a.js` when
+ *   one is supplied, while an extensionless `"./a"` resolves to the
+ *   same-basename TypeScript source. An edge whose resolved target is
+ *   not the source is correctly not reported.
  * - `edge.to === null` is excluded implicitly: `CanonicalPath` is a
  *   `string`, so a string never strictly equals null. Consequently the
  *   `unresolved` and `external` classifications — both of which imply

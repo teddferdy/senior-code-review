@@ -768,6 +768,32 @@ describe("REV-UNRES-001 unresolved relative import review", () => {
   );
 
   it(
+    "reports a non-program asset specifier even when a same-basename source exists",
+    () => {
+      const { context, result } = evaluate(
+        {
+          "src/a.ts": 'import "./styles.css";',
+          "src/styles.ts": "export const styles = 1;",
+        },
+        { applicable: true },
+      );
+
+      try {
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0]).toMatchObject({
+          source: "src/a.ts",
+          rawSpecifier: "./styles.css",
+          kind: "unresolved",
+          via: "import",
+        });
+      } finally {
+        finish(context);
+      }
+    },
+    30000,
+  );
+
+  it(
     "reports nothing for a dynamic import because the substrate emits no module edge for it",
     () => {
       // extractModuleEdges visits only ImportDeclaration and
